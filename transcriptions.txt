@@ -12,3 +12,5 @@
 2024-11-07 16:29:07: Hola, ¿qué tal? ¿Cómo estás?
 2024-11-07 16:29:18: how it's going is it
 2024-11-07 16:44:09: Hallo, ich bin Marius.
+2024-11-08 17:17:24: Hello, hello.
+2024-11-08 17:23:31: Hello, hello, how are you?
