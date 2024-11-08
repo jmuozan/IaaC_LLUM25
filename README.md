@@ -1,8 +1,8 @@
-- [x] Speech 2 Text
+- [ ] Speech 2 Text
 - [ ] AI Webapp
 - [ ] Website repo
 - [ ] Documentation
-- [ ] OSC ESP32 to python
+- [x] OSC ESP32 to python
 - [ ] Image style
 - [ ] Microphone working in python?
 - [ ] Responsive webapp
