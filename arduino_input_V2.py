@@ -4,7 +4,7 @@ import threading
 
 # Function to handle OSC messages
 def handle_osc_message(stt_callback, address, *args):
-    print(f"Received from {address}: {args}")
+    print(f"{args}")
     if args and args[0] == 1:  # Check if the first argument is 1
         stt_callback()  # Call the provided callback function
 

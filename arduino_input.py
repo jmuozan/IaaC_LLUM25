@@ -3,7 +3,9 @@ from pythonosc import osc_server
 import threading
 
 def handle_osc_message(address, *args):
-    print(f"Received from {address}: {args}")
+    #print(f"Received from {address}: {args}")
+    print(f"{args}")
+
 
 def start_osc_server(ip, port):
     # Create a dispatcher to handle incoming OSC messages
@@ -22,3 +24,4 @@ if __name__ == "__main__":
     # Start OSC server
     server_thread = threading.Thread(target=start_osc_server, args=(ip, port))
     server_thread.start()
+
