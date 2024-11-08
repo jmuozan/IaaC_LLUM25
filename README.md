@@ -1,10 +1,10 @@
-- [ ] Speech 2 Text
+- [x] Speech 2 Text
 - [ ] AI Webapp
 - [ ] Website repo
 - [ ] Documentation
 - [x] OSC ESP32 to python
 - [ ] Image style
-- [ ] Microphone working in python?
+- [x] Microphone working in python?
 - [ ] Responsive webapp
 - [ ] Style Webapp
 - [ ] Image scaling model
