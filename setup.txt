@@ -1,0 +1,7 @@
+source env/bin/activate
+source env/bin/activate #MAC/LINUX
+.\env\Scripts\activate #Windows
+pip install -r requirements.txt
+
+
+
