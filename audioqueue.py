@@ -115,7 +115,7 @@ def generate_image(system_role, user_inputs ):
         # Send the prompt to OpenAI's DALL-E API for image generation
         response = client.images.generate(model="dall-e-3", prompt=final_prompt,
         n=1,
-        size="512x512")
+        size="1024x1024")
 
         # Extract the image URL from the response
         image_url = response.data[0].url
