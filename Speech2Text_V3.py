@@ -1,35 +1,61 @@
-import sounddevice as sd
-import numpy as np
+import pyaudio
 import wave
 from openai import OpenAI
 import time
 import os
-import arduino_input_V2  # Import the osc_server module
 
 class SpeechToText:
     def __init__(self, api_key=None):
         self.client = OpenAI(api_key=api_key)
         
         # Audio recording parameters
+        self.chunk = 1024
+        self.format = pyaudio.paInt16
         self.channels = 1
         self.rate = 44100
         self.record_seconds = 3 
+        
+        self.audio = pyaudio.PyAudio()
     
     def record_audio(self):
-        """Record audio for a given duration using sounddevice"""
         print(f"\nRecording for {self.record_seconds} seconds...")
-        audio = sd.rec(int(self.record_seconds * self.rate), samplerate=self.rate, channels=self.channels, dtype='int16')
-        sd.wait()  # Wait until the recording is finished
-        print("Recording finished.")
-        return audio
-
-    def save_audio(self, audio, filename="temp.wav"):
-        """Save recorded audio to a WAV file"""
-        with wave.open(filename, 'wb') as wf:
-            wf.setnchannels(self.channels)
-            wf.setsampwidth(2)  # 16-bit audio
-            wf.setframerate(self.rate)
-            wf.writeframes(audio.tobytes())
+        
+        stream = self.audio.open(
+            format=self.format,
+            channels=self.channels,
+            rate=self.rate,
+            input=True,
+            frames_per_buffer=self.chunk
+        )
+        
+        frames = []
+        
+        # Record audio
+        for i in range(0, int(self.rate / self.chunk * self.record_seconds)):
+            data = stream.read(self.chunk)
+            frames.append(data)
+            
+            # Show progress
+            if i % int(self.rate / (self.chunk * 2)) == 0:  # Update twice per second
+                seconds_left = self.record_seconds - (i * self.chunk / self.rate)
+                print(f"Recording... {seconds_left:.1f} seconds left", end='\r')
+        
+        print("\nFinished!")
+        
+        # Stop and close stream
+        stream.stop_stream()
+        stream.close()
+        
+        return frames
+    
+    def save_audio(self, frames, filename="temp.wav"):
+        """Save recorded audio to WAV file"""
+        wf = wave.open(filename, 'wb')
+        wf.setnchannels(self.channels)
+        wf.setsampwidth(self.audio.get_sample_size(self.format))
+        wf.setframerate(self.rate)
+        wf.writeframes(b''.join(frames))
+        wf.close()
     
     def transcribe_audio(self, audio_file):
         """Transcribe audio file using OpenAI Whisper API with automatic language detection"""
@@ -45,13 +71,13 @@ class SpeechToText:
             return None
     
     def record_and_transcribe(self):
-        """Main function to handle recording and transcription"""
+        """Function to handle recording and transcription"""
         # Record audio
-        audio = self.record_audio()
+        frames = self.record_audio()
         
         # Save audio
         temp_file = "temp_recording.wav"
-        self.save_audio(audio, temp_file)
+        self.save_audio(frames, temp_file)
         
         # Transcribe
         print("Processing transcription...")
@@ -65,14 +91,3 @@ class SpeechToText:
         # Clean up
         if os.path.exists(temp_file):
             os.remove(temp_file)
-
-# Initialize SpeechToText instance and define the callback function
-stt = SpeechToText(api_key="your_openai_api_key")  # Replace with your actual API key
-
-def stt_callback():
-    """Callback function to trigger recording and transcription"""
-    stt.record_and_transcribe()
-
-# Start the OSC server in a separate thread
-if __name__ == "__main__":
-    arduino_input_V2.run_server(stt_callback, ip="0.0.0.0", port=9999)
