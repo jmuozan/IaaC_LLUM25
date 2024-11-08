@@ -5,9 +5,11 @@ from openai import OpenAI
 import time
 import os
 
+client = OpenAI()
+
 class SpeechToText:
-    def __init__(self, api_key=None):
-        self.client = OpenAI(api_key=api_key)
+    def __init__(self):
+        self.client = OpenAI()
         
         # Audio recording parameters
         self.chunk = 1024
