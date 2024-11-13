@@ -3,12 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <title>Exhibition Display</title>
+    <script>
+        async function triggerProcess() {
+            await fetch('/trigger_process', {method: 'POST'});
+            alert("Processing started. Please wait...");
+            refreshContent();
+        }
+
+        async function refreshContent() {
+            // Refresh the generated image
+            document.getElementById("generated_image").src = "/latest_image?" + new Date().getTime();
+            
+            // Refresh the merged audio
+            document.getElementById("merged_audio").src = "/latest_audio?" + new Date().getTime();
+        }
+    </script>
 </head>
 <body>
+    <h1>Collaborative Exhibition</h1>
+    <button onclick="triggerProcess()">Start New Recording Session</button>
+
     <h2>Latest Collaborative Image</h2>
-    <img id="generated_image" src="static/Generated_Images/generated_image.jpeg" alt="Generated Image" width="500"/>
-    
+    <img id="generated_image" src="/latest_image" alt="Generated Image" width="500"/>
+
     <h2>Combined Audio</h2>
-    <audio id="merged_audio" controls src="static/audio/combined_audio.wav"></audio>
+    <audio id="merged_audio" controls src="/latest_audio"></audio>
 </body>
 </html>
