@@ -1,5 +1,6 @@
-import sounddevice as sd
+import os
 import soundfile as sf
+import sounddevice as sd  
 import numpy as np
 
 class AudioProcessor:
@@ -9,20 +10,25 @@ class AudioProcessor:
         self.record_seconds = record_seconds
 
     def record_audio(self):
-        """Record audio and return it as a numpy array."""
-        print(f"Recording for {self.record_seconds} seconds...")
+        print("Recording audio...")
         audio_data = sd.rec(int(self.record_seconds * self.rate), samplerate=self.rate, channels=self.channels)
-        sd.wait()  # Wait until recording is finished
-        print("Recording complete.")
+        sd.wait()
         return audio_data
 
-    def save_audio(self, audio_data, filename="temp.wav"):
-        """Save audio data to a WAV file using soundfile."""
+    def save_audio(self, audio_data, filename):
         sf.write(filename, audio_data, self.rate)
-        print(f"Audio saved as {filename}")
+        return filename
 
+    def merge_audio_files(self, audio_files, output_filename="static/audio/combined_audio.wav"):
+        # Ensure the directory exists
+        output_directory = os.path.dirname(output_filename)
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
 
-#to test audio processor
-#audio_processor = AudioProcessor()
-#audio_data = audio_processor.record_audio()
-#audio_processor.save_audio(audio_data, "test_recording.wav")
+        # Combine the audio data
+        combined_audio = np.concatenate([sf.read(f)[0] for f in audio_files])
+        
+        # Save the combined audio
+        sf.write(output_filename, combined_audio, self.rate)
+        print(f"Merged audio saved as {output_filename}")
+        return output_filename

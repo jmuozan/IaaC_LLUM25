@@ -2,3 +2,6 @@
 /Venv
 env
 Venv
+/Generated_Images
+/static
+/history.txt

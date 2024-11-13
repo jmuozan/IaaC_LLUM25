@@ -1,9 +1,6 @@
 from openai import OpenAI
 import os
 import requests
-import sounddevice as sd
-import speech_recognition as sr
-from scipy.io.wavfile import write
 from dotenv import load_dotenv
 from collections import deque
 
@@ -42,9 +39,6 @@ def get_next_image_filename():
 HISTORY_FILE = "history.txt"
 MAX_HISTORY_LINES = 6
 
-# Initialize speech recognizer
-recognizer = sr.Recognizer()
-
 # Base prompt to add context for DALL-E image generation
 base_prompt = (
     "This is a collaborative image based on inputs from multiple users. "
@@ -55,29 +49,6 @@ base_prompt = (
 ##################################
 #########   Functions
 ##################################
-
-# Function to capture audio using sounddevice and save to WAV
-def capture_audio_input(person_number, filename="user_input.wav", duration=5, fs=44100):
-    print(f"Person {person_number}, please say something:")
-    audio_data = sd.rec(int(duration * fs), samplerate=fs, channels=1)
-    sd.wait()  # Wait until recording is finished
-    write(filename, fs, (audio_data * 32767).astype('int16'))  # Save as WAV
-
-    # Transcribe the saved audio file
-    with sr.AudioFile(filename) as source:
-        audio = recognizer.record(source)  # Read the entire audio file
-
-    try:
-        transcription = recognizer.recognize_google(audio)
-        print(f"Person {person_number}'s input: {transcription}")
-        return transcription
-    except sr.UnknownValueError:
-        print("Could not understand the audio.")
-        return ""
-    except sr.RequestError as e:
-        print(f"Could not request results from Google Speech Recognition service; {e}")
-        return ""
-
 
 # Function to update and retrieve history
 def update_and_get_history(new_inputs):
@@ -166,13 +137,6 @@ if __name__ == "__main__":
         "there is trash",
         "many people are here"
     ]
-
-    #Collect user inputs (already captured in the previous steps)
-    #user_inputs = []
-    #for i in range(1, 4):
-     #   user_input = capture_audio_input(i)
-      #  if user_input:
-      #     user_inputs.append(user_input)
 
     # Generate the image with the system role and combined user inputs
     img_path = generate_image(system_role, user_inputs)
