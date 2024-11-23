@@ -7,4 +7,4 @@ Venv
 /history.txt
 /scripts/__pycache__
 /scripts/static/audio
-/scripts/sentenses.json
+/scripts/sentences.json
