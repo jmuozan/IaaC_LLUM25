@@ -125,7 +125,7 @@ if __name__ == "__main__":
         #"Your role is to combine multiple user inputs in a hand-drawn sketch illustration on a black background, with a focus on outlines and a childlike, minimalistic but colorful style."
         #"Your role is to combine multiple user inputs in a artistic illustration style on a black background, with a focus on outlines and minimalistic but colorful style."
         #"Your role is to combine multiple user inputs in a artistic illustration style on a black background, with a focus on outlines and minimalistic but strong saturated colorful style, with neon colores." # - neon prompt
-        "Your role is to combine multiple user inputs in a hand drawn child like sketch style with a focus on outlines and  strong saturated neon like colors in a spray syle."
+        "Your role is to combine multiple user inputs in a Interface like Pictogram Icon or Illustration style using thick lines and strong neon colors."
         #"Your role is to combine multiple user inputs in a hand drawn illustration style on a black background, with a focus on outlines and minimalistic but strong saturated colorful style and high contrast colors."
         #"Your role is to combine multiple user inputs in a hand drawn illustration style on a black background, with a focus on outlines and childlike, minimalistic but strong saturated colorful style."
         "use always a black background to ensure consistency"
@@ -133,9 +133,9 @@ if __name__ == "__main__":
     )
 
     user_inputs = [
-        "draw Trees",
-        "there is trash",
-        "many people are here"
+        "i envision a future with a lot of food",
+        "there is a lot more green",
+        "but where is the space for people ?"
     ]
 
     # Generate the image with the system role and combined user inputs

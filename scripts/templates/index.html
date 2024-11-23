@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Transcriptions</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Left: Falling Transcriptions -->
+        <div class="left">
+            <div class="left-header">LLUM 2025</div>
+            <div id="transcriptions">
+                <div class="loading" id="loading">Loading...</div>
+                <ul id="transcription-list">
+                    {% for sentence in sentences %}
+                    <li>{{ sentence }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Right: Responsive Image -->
+        <div class="right">
+            <img src="/static/Generated_Images/loading_animation2.gif" alt="Generated Image" id="image">
+        </div>        
+    </div>
+
+    <!-- JavaScript for WebSocket -->
+    <script>
+        const ws = new WebSocket("ws://127.0.0.1:8001/ws");
+        const transcriptionList = document.getElementById("transcription-list");
+        const imageElement = document.getElementById("image");
+        const loadingIndicator = document.getElementById("loading");
+
+        let promptFrame = null; // Reference to the current prompt frame
+
+        // Maximum number of sentences to display
+        const MAX_SENTENCES = 12;
+
+        //Static Animation
+        const DEFAULT_GIF = "/static/Generated_Images/loading_animation2.gif";
+        // Timeout for resetting the image to the GIF
+        const IMAGE_TIMEOUT = 10000; // 10 seconds
+
+        // Initialize timeout variable
+        let imageTimeout;
+
+        // Function to add a new sentence to the top of the transcription list
+        function addSentence(sentence) {
+            const newSentence = document.createElement("li");
+            newSentence.textContent = sentence;
+
+            // Add the new sentence to the top
+            transcriptionList.insertBefore(newSentence, transcriptionList.firstChild);
+
+            // Remove excess sentences if more than MAX_SENTENCES
+            if (transcriptionList.children.length > MAX_SENTENCES) {
+                transcriptionList.removeChild(transcriptionList.lastChild);
+            }
+
+            // Mark the top three sentences as the current image prompt
+            markImagePrompt();
+        }
+
+        // Function to group the top three sentences in a frame
+        function markImagePrompt() {
+            // Remove the existing frame, if any
+            if (promptFrame) {
+                promptFrame.remove();
+                promptFrame = null;
+            }
+
+            // Get the top three sentences
+            const topSentences = Array.from(transcriptionList.children).slice(0, 3);
+
+            // Only create a frame if there are at least three sentences
+            if (topSentences.length === 3) {
+                // Create the prompt frame
+                promptFrame = document.createElement("div");
+                promptFrame.classList.add("prompt-frame", "loading"); // Add loading state initially
+
+                // Move the top three sentences into the frame
+                topSentences.forEach(sentence => {
+                    promptFrame.appendChild(sentence);
+                });
+
+                // Insert the frame at the top of the list
+                transcriptionList.insertBefore(promptFrame, transcriptionList.firstChild);
+            }
+        }
+
+        // Function to update the displayed image
+        function updateImage(imagePath) {
+            // Update image src and reset timeout
+            imageElement.src = `${imagePath}?t=${new Date().getTime()}`; // Add timestamp to bypass caching
+
+            // Clear any existing timeout
+            clearTimeout(imageTimeout);
+
+            // Set a new timeout to reset to the default GIF
+            imageTimeout = setTimeout(() => {
+                imageElement.src = DEFAULT_GIF;
+            }, IMAGE_TIMEOUT);
+        }
+
+        ws.onopen = () => {
+            console.log("WebSocket connection established.");
+            loadingIndicator.style.display = "none";
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const message = JSON.parse(event.data);
+
+                if (message.event === "new_sentence" && message.data) {
+                    console.log("New sentence received:", message.data);
+                    addSentence(message.data);
+                }
+
+                if (message.event === "update_image" && message.data) {
+                    console.log("Image update received:", message.data);
+                    updateImage(message.data);
+                }
+            } catch (error) {
+                console.error("Error processing WebSocket message:", error);
+            }
+        };
+
+        ws.onerror = (error) => {
+            console.error("WebSocket error:", error);
+        };
+
+        ws.onclose = () => {
+            console.warn("WebSocket connection closed.");
+        };
+    </script>
+</body>
+</html>

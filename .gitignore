@@ -5,3 +5,7 @@ Venv
 /Generated_Images
 /static
 /history.txt
+/scripts/__pycache__
+/scripts/static/audio
+/scripts/static/Generated_Images
+/scripts/sentenses.json

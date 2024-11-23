@@ -1,19 +1,24 @@
-import os
-from collections import deque
+def update_and_get_history(transcriptions, max_lines=10, history_file = "history.txt"):
 
-HISTORY_FILE = "history.txt"
-MAX_HISTORY_LINES = 6
+    # Ensure the file exists
+    with open(history_file, "a", encoding="utf-8") as file:
+        pass
 
-def update_and_get_history(new_inputs):
-    history = deque(maxlen=MAX_HISTORY_LINES)
-    if os.path.exists(HISTORY_FILE):
-        with open(HISTORY_FILE, "r") as file:
-            for line in file:
-                history.append(line.strip())
-
-    history.extend(new_inputs)
-    with open(HISTORY_FILE, "a") as file:
-        for input in new_inputs:
+    # Write new transcriptions to the file
+    with open(history_file, "a", encoding="utf-8") as file:
+        for input in transcriptions:
             file.write(f"{input}\n")
 
-    return list(history)
+    # Read history and keep only the last `max_lines` entries
+    with open(history_file, "r", encoding="utf-8") as file:
+        history = file.readlines()
+
+    history = history[-max_lines:]  # Keep only the last `max_lines` entries
+
+    # Write the trimmed history back to the file
+    with open(history_file, "w", encoding="utf-8") as file:
+        file.writelines(history)
+
+    # Return the trimmed history as a list of stripped lines
+    return [line.strip() for line in history]
+
