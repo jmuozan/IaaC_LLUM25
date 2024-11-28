@@ -38,7 +38,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #222;
+  background: #000000;
 }
 
 img {
@@ -91,6 +91,9 @@ img {
 .transcriptions{
     width:100%;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 #transcription-list {
@@ -105,35 +108,55 @@ img {
 #transcription-list li {
     margin: 5px 0;
     font-family: 'Roboto Mono', monospace;
+    list-style-type: none; 
+    gap: 20px;
 }
 
 .prompt-frame {
     border: 3px solid mediumspringgreen;
-    padding: 10px;
-    margin: 10px 0;
     border-radius: 10px;
     position: relative;
 }
 
 /* Loading state for the prompt frame */
 .prompt-frame.loading {
-    border-color: blue;
+    border: 3px solid blue;
     animation: pulse 1s infinite;
 }
 
-.in-progress{
-  border-color: blue;
-    animation: pulse 1s infinite;
+#in-progress-box{
+  padding: 24px;
+  border: 3px solid blue;
+  animation: pulse 1s infinite;
+  margin-block-end: 24px;
 }
 
-.finished {
+#done-box {
+  padding: 24px;
   border: 3px solid mediumspringgreen;
-  animation: none;
+}
+
+li {
+  font-size: 24px;
+  list-style-type:square;
+  padding: 0; /* Removes default padding */
+  margin: 0; /* Removes default margin */
+}
+
+li.in-progress {
+  color: rgb(255, 255, 255);
+  font-weight: bold;
+  column-gap: 20px;
+}
+
+li.done {
+  color: rgb(180, 180, 180);
 }
 
 .prompt-frame.complete {
   border: 3px solid mediumspringgreen;
   animation: none;
+  column-gap: 20px;
 }
 
 @keyframes pulse {

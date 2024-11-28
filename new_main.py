@@ -2,7 +2,7 @@ import asyncio
 from collections import deque
 from scripts.audioprocessor import AudioProcessor
 from scripts.transcribe_audio import transcribe_audio
-from scripts.history_manager import append_to_history, update_sentences_json 
+from scripts.history_manager import append_to_history, add_sentences_in_progress, finalize_sentences 
 import requests
 import websockets
 import json
@@ -20,6 +20,28 @@ transcription_queue = deque(maxlen=PACKAGE_SIZE)
 
 # Graceful shutdown flag
 shutdown_flag = False
+
+def update_sentence_status(sentences, status):
+    """Update the statuses of specific sentences in `sentences.json`."""
+    try:
+        with open(SENTENCES_FILE, "r", encoding="utf-8") as file:
+            data = json.load(file)
+
+        # Update the status of the specified sentences
+        for sentence in data:
+            if sentence["text"] in sentences:
+                sentence["status"] = status
+
+        # Remove the oldest "done" sentences if there are more than 3
+        done_sentences = [s for s in data if s["status"] == "done"]
+        if len(done_sentences) > 3:
+            data = [s for s in data if s not in done_sentences[:-3]]
+
+        with open(SENTENCES_FILE, "w", encoding="utf-8") as file:
+            json.dump(data, file, indent=4)
+        print(f"[INFO] Updated statuses for: {sentences}")
+    except Exception as e:
+        print(f"[ERROR] Failed to update sentence statuses: {e}")
 
 # Transcription processing
 async def handle_audio_processing(websocket):
@@ -43,7 +65,7 @@ async def handle_audio_processing(websocket):
             # Append transcription to queue and history
             transcription_queue.append(transcription.strip())
             append_to_history([transcription.strip()])
-            updated_sentences = update_sentences_json()
+            updated_sentences = add_sentences_in_progress([transcription.strip()])
 
             # Notify WebSocket clients
             requests.post(UPDATE_SENTENCES_URL, json=updated_sentences)
@@ -70,7 +92,13 @@ async def generate_image(websocket):
         response = requests.post(IMAGE_GENERATION_URL, json={"prompt": prompt})
         response.raise_for_status()
         image_path = response.json().get("image_path")
+
+         # Update sentences.json statuses
+        update_sentence_status(package, "done")  # Mark the package as "done"
         requests.post(UPDATE_IMAGE_URL, json={"image_path": image_path})
+        updated_sentences = finalize_sentences()
+        requests.post(UPDATE_SENTENCES_URL, json=updated_sentences)
+
 
         # Clear the processed sentences from the queue
         transcription_queue.clear()
