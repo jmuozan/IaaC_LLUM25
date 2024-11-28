@@ -121,6 +121,21 @@ img {
     animation: pulse 1s infinite;
 }
 
+.in-progress{
+  border-color: blue;
+    animation: pulse 1s infinite;
+}
+
+.finished {
+  border: 3px solid mediumspringgreen;
+  animation: none;
+}
+
+.prompt-frame.complete {
+  border: 3px solid mediumspringgreen;
+  animation: none;
+}
+
 @keyframes pulse {
     0% { border-color: blue; }
     50% { border-color: darkblue; }

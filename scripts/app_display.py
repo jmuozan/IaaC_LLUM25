@@ -1,118 +1,105 @@
 import json
-from fastapi import FastAPI, Form, Request, WebSocket
-from fastapi.responses import HTMLResponse
+import os
+import asyncio
+from fastapi import FastAPI, WebSocket, Request, Form
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 from typing import List
-import os
-from time import time
-import asyncio
+import uvicorn
 
-
-# Paths and initialization
-base_dir = os.path.abspath(os.path.dirname(__file__))
-templates = Jinja2Templates(directory=os.path.join(base_dir, "templates"))
+# Initialize app
 app = FastAPI()
-app.mount("/static", StaticFiles(directory=os.path.join(base_dir, "static")), name="static")
 
-# Files and state
-# static_dir = os.path.join(base_dir, "static")
-SENTENCES_FILE = os.path.join(base_dir, "sentences.json")
-websocket_clients = []
-latest_image = None  # Store the latest image path
+# Path setup
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
+STATIC_DIR = os.path.join(BASE_DIR, "static")
+SENTENCES_FILE = os.path.join(BASE_DIR, "sentences.json")
 
-# Helper functions to load/save sentences
-def load_sentences() -> List[str]:
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+templates = Jinja2Templates(directory=TEMPLATES_DIR)
+
+# WebSocket clients
+clients = set()  # Set to keep track of WebSocket connections
+# Helper Functions
+def load_sentences():
+    """Load sentences from JSON file."""
     try:
         with open(SENTENCES_FILE, "r", encoding="utf-8") as file:
-            sentences = json.load(file)
-            print(f"[DEBUG] Loaded sentences: {sentences}")
-            return sentences
-    except (FileNotFoundError, json.JSONDecodeError) as e:
-        print(f"[DEBUG] Error loading sentences: {e}")
-        save_sentences([])  # Create an empty file if it doesn't exist
+            return json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
         return []
 
 
-
-
-def save_sentences(sentences: List[str]):
+def save_sentences(sentences: List[dict]):
+    """Save sentences to JSON file."""
     with open(SENTENCES_FILE, "w", encoding="utf-8") as file:
-        json.dump(sentences, file)
-    print(f"Sentences saved to {SENTENCES_FILE}: {sentences}")  # Debug log
+        json.dump(sentences, file, indent=4)
 
-#Notify HTML for new available packages
-async def notify_clients(event=None, data=None):
-    """Send event and data to all connected WebSocket clients."""
-    message = {}
-    if event:
-        message["event"] = event
-    if data:
-        message["data"] = data
-    else:
-        # If no event/data provided, send grouped sentences
-        sentences = load_sentences()
-        grouped_sentences = [sentences[i:i + 3][::-1] for i in range(0, len(sentences), 3)][::-1]
-        message["boxes"] = grouped_sentences
-
-    for client in websocket_clients:
-        try:
-            await client.send_json(message)
-        except Exception as e:
-            print(f"[DEBUG] WebSocket error: {e}")
-            websocket_clients.remove(client)
-
-
+# Routes
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    """Serve the main page."""
+    """Serve the main HTML page."""
     sentences = load_sentences()
     return templates.TemplateResponse(
-        "index.html",
-        {"request": request, "sentences": sentences, "image_path": latest_image}
+        "index.html", {"request": request, "sentences": sentences}
     )
 
-@app.post("/add-sentence")
-async def add_sentence(sentence: str = Form(...)):
-    """Receive a new sentence and notify clients."""
-    sentences = load_sentences()
-    sentences.append(sentence.strip())
-    save_sentences(sentences[-12:])  # Save the updated list
-    await notify_clients(event="new_sentence", data=sentence.strip())
-    return {"status": "success", "message": "Sentence added."}
+@app.post("/update-sentences")
+async def update_sentences(request: Request):
+    data = await request.json()
+    with open(SENTENCES_FILE, "w", encoding="utf-8") as file:
+        json.dump(data, file, indent=4)
+    await notify_clients("update_sentences", data)
+    return {"status": "success"}
 
 @app.post("/update-image")
 async def update_image(request: Request):
-    """Receive a new image path and notify clients."""
     data = await request.json()
-    image_path = data.get("image_path")
-    if not image_path:
-        print("[DEBUG] No image path provided.")
-        return {"status": "error", "message": "Image path is required."}
-    print(f"[DEBUG] Received image update: {image_path}")
-    # global latest_image
-    # latest_image = image_path
-    await notify_clients(event="update_image", data=image_path)
-    return {"status": "success", "message": "Image updated."}
+    await notify_clients("update_image", data)
+    return {"status": "success"}
 
 
+# WebSocket Endpoint
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    websocket_clients.append(websocket)
-    print("[DEBUG] WebSocket connection opened.")
+    clients.add(websocket)  # Add the client to the set
+    print(f"[INFO] WebSocket connection opened. Total clients: {len(clients)}")
+
     try:
-        await notify_clients()
+        # Send existing sentences on connection
+        sentences = load_sentences()
+        await websocket.send_json({"event": "init_sentences", "data": sentences})
+        print("[DEBUG] Sent existing sentences to new client.")
+
+        # Keep listening for messages (if needed in the future)
         while True:
-            await asyncio.sleep(10)  # Keep the connection alive
+            try:
+                data = await websocket.receive_json()
+                print("[DEBUG] Received WebSocket message:", data)
+            except Exception as e:
+                print(f"[ERROR] Failed to process WebSocket message: {e}")
+                break
     except Exception as e:
-        print(f"[DEBUG] WebSocket error: {e}")
+        print(f"[ERROR] WebSocket error: {e}")
     finally:
-        websocket_clients.remove(websocket)
-        print("[DEBUG] WebSocket connection closed.")
+        clients.remove(websocket)  # Remove the client on disconnect
+        print(f"[INFO] WebSocket connection closed. Total clients: {len(clients)}")
+
+async def notify_clients(event, data):
+    message = {"event": event, "data": data}
+    for client in clients:
+        await client.send_json(message)
+
+# Exception Handling
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    print(f"[ERROR] Unhandled exception: {exc}")
+    return JSONResponse(status_code=500, content={"message": "Internal server error."})
 
 
-import uvicorn
-
+# Run the app
 if __name__ == "__main__":
-    uvicorn.run("app_display:app", host="127.0.0.1", port=8001, reload=True)
+    uvicorn.run("app_display:app", host="127.0.0.1", port=8001, reload=True, timeout_keep_alive=300)

@@ -15,10 +15,10 @@
             <div id="transcriptions">
                 <div class="loading" id="loading">Loading...</div>
                 <ul id="transcription-list">
-                    {% for sentence in sentences %}
-                    <li>{{ sentence }}</li>
-                    {% endfor %}
+                    <li>Test Transcription (In Progress)</li>
+                    <li class="finished">Test Transcription (Finished)</li>
                 </ul>
+                
             </div>
         </div>
         
@@ -35,94 +35,112 @@
         const imageElement = document.getElementById("image");
         const loadingIndicator = document.getElementById("loading");
 
-        let promptFrame = null; // Reference to the current prompt frame
-
-        // Maximum number of sentences to display
-        const MAX_SENTENCES = 12;
-
-        //Static Animation
+        const MAX_SENTENCES = 6; // Display 3 in-progress and 3 finished
         const DEFAULT_GIF = "/static/Generated_Images/loading_animation2.gif";
-        // Timeout for resetting the image to the GIF
-        const IMAGE_TIMEOUT = 30000; // 30 seconds
+        const IMAGE_TIMEOUT = 30000; // Reset image after 30 seconds
+        let imageTimeout = null;
 
-        // Initialize timeout variable
-        let imageTimeout;
+        function updateTranscriptions(sentences) {
+            const transcriptionList = document.getElementById("transcription-list");
+            transcriptionList.innerHTML = ""; // Clear the current list
 
-        // Function to add a new sentence to the top of the transcription list
-        function addSentence(sentence) {
-            const newSentence = document.createElement("li");
-            newSentence.textContent = sentence;
-
-            // Add the new sentence to the top
-            transcriptionList.insertBefore(newSentence, transcriptionList.firstChild);
-
-            // Remove excess sentences if more than MAX_SENTENCES
-            if (transcriptionList.children.length > MAX_SENTENCES) {
-                transcriptionList.removeChild(transcriptionList.lastChild);
-            }
-
-            // Mark the top three sentences as the current image prompt
-            markImagePrompt();
+            sentences.forEach((sentence) => {
+                const sentenceElement = document.createElement("li");
+                sentenceElement.textContent = sentence.text;
+                if (sentence.status === "done") {
+                    sentenceElement.classList.add("done");
+                } else {
+                    sentenceElement.classList.add("in-progress");
+                }
+                transcriptionList.appendChild(sentenceElement);
+            });
         }
 
-        // Function to group the top three sentences in a frame
-        function markImagePrompt() {
-            // Remove the existing frame, if any
-            if (promptFrame) {
-                promptFrame.remove();
-                promptFrame = null;
-            }
+        function connectWebSocket() {
+            ws = new WebSocket("ws://127.0.0.1:8001/ws");
 
-            // Get the top three sentences
-            const topSentences = Array.from(transcriptionList.children).slice(0, 3);
+            ws.onopen = () => {
+                console.log("WebSocket connection established.");
+            };
 
-            // Only create a frame if there are at least three sentences
-            if (topSentences.length === 3) {
-                // Create the prompt frame
-                promptFrame = document.createElement("div");
-                promptFrame.classList.add("prompt-frame", "loading"); // Add loading state initially
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                if (message.event === "update_sentences") {
+                    console.log("Updated sentences received:", message.data);
+                    updateTranscriptions(message.data); // Update the UI dynamically
+                } else if (message.event === "update_image") {
+                    console.log("Image path received:", message.data);
+                    updateImage(message.data); // Function to update the image dynamically
+                }
+            };
 
-                // Move the top three sentences into the frame
-                topSentences.forEach(sentence => {
-                    promptFrame.appendChild(sentence);
-                });
+            ws.onclose = (event) => {
+                console.warn("WebSocket connection closed:", event);
+                console.log("Reconnecting in 2 seconds...");
+                setTimeout(connectWebSocket, 2000); // Reconnect after 2 seconds
+            };
 
-                // Insert the frame at the top of the list
-                transcriptionList.insertBefore(promptFrame, transcriptionList.firstChild);
-            }
+            ws.onerror = (error) => {
+                console.error("WebSocket error:", error);
+            };
         }
 
-        // Function to update the displayed image
+        // Update displayed image
         function updateImage(imagePath) {
-            // Update image src and reset timeout
-            imageElement.src = `${imagePath}?t=${new Date().getTime()}`; // Add timestamp to bypass caching
-
-            // Clear any existing timeout
-            clearTimeout(imageTimeout);
-
-            // Set a new timeout to reset to the default GIF
-            imageTimeout = setTimeout(() => {
-                imageElement.src = DEFAULT_GIF;
-            }, IMAGE_TIMEOUT);
+            const imageElement = document.getElementById("image");
+            imageElement.src = `${imagePath}?t=${new Date().getTime()}`; // Cache-busting
         }
 
+        // WebSocket connection open
         ws.onopen = () => {
             console.log("WebSocket connection established.");
             loadingIndicator.style.display = "none";
         };
 
+        function addSentence(sentence) {
+            const transcriptionList = document.getElementById("transcription-list");
+            const newSentence = document.createElement("li");
+            newSentence.textContent = sentence.text;
+
+            if (sentence.status === "done") {
+                newSentence.classList.add("finished");
+            } else if (sentence.status === "new") {
+                newSentence.classList.add("in-progress");
+            }
+
+            transcriptionList.insertBefore(newSentence, transcriptionList.firstChild);
+
+            // Remove excess sentences if more than 6
+            while (transcriptionList.children.length > 6) {
+                transcriptionList.removeChild(transcriptionList.lastChild);
+            }
+        }
+
+        // Handle incoming WebSocket messages
         ws.onmessage = (event) => {
+            console.log("WebSocket message received:", event.data);
             try {
                 const message = JSON.parse(event.data);
 
-                if (message.event === "new_sentence" && message.data) {
-                    console.log("New sentence received:", message.data);
-                    addSentence(message.data);
+                if (message.event === "ping") {
+                    console.log("Received ping from server."); // Ignore pings
+                    return;
+                }
+
+                if (message.event === "init_sentences" && message.data) {
+                    console.log("Initializing sentences:", message.data);
+                    updateTranscriptions(message.data);
+                }
+
+                if (message.event === "update_sentences") {
+                    console.log("Updating transcriptions:", message.data); // Debug log
+                    updateTranscriptions(message.data);
                 }
 
                 if (message.event === "update_image" && message.data) {
-                    console.log("Image update received:", message.data);
-                    updateImage(message.data);
+                    const imagePath = message.data.image_path;
+                    console.log("Image update received:", imagePath);
+                    imageElement.src = `${imagePath}?t=${new Date().getTime()}`; // Add timestamp to bypass cache
                 }
             } catch (error) {
                 console.error("Error processing WebSocket message:", error);

@@ -8,3 +8,5 @@ Venv
 /scripts/__pycache__
 /scripts/static/audio
 /scripts/sentences.json
+sentences.json
+/scripts/image_queue.json
