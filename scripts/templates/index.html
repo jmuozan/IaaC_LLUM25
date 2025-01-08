@@ -11,26 +11,25 @@
     <div class="container">
         <!-- Left: Falling Transcriptions -->
         <div class="left">
-            <div class="left-header">LLUM 2025</div>
+            <div class="left-header">Miralls de Manana - LLUM 2025</div>
             <div id="transcriptions">
                 <div id="in-progress-box" class="status-box">
-                    <h2>In Progress</h2>
+                    <div class="processing-header">Processing</div>
                     <ul id="in-progress-list"></ul>
                 </div>
                 <div id="done-box" class="status-box">
-                    <h2>Done</h2>
+                    <div class="generated-header">Vision Generated</div>
                     <ul id="done-list"></ul>
                 </div>
                 
             </div>
         </div>
-        
         <!-- Right: Responsive Image -->
         <div class="right">
             <img src="/static/Generated_Images/loading_animation2.gif" alt="Generated Image" id="image">
         </div>  
-        <div class="question">
-            Question
+        <div class="question" id="question">
+            How will living in cities look like in the future ?
         </div>      
     </div>
 
@@ -45,6 +44,25 @@
         const DEFAULT_GIF = "/static/Generated_Images/loading_animation2.gif";
         const IMAGE_TIMEOUT = 30000; // Reset image after 30 seconds
         let imageTimeout = null;
+
+        const questionElement = document.getElementById("question");
+
+        const questions = [
+            "How will living in cities look like in the future?",
+            "What will transportation look like in 2050?",
+            "How will AI impact daily life in urban areas?",
+            "What role will renewable energy play in future cities?",
+            "What challenges might arise in a sustainable city?",
+            "How can technology bridge gaps in city accessibility?"
+        ];
+
+        let currentQuestionIndex = 0;
+
+        // Update the question after an image is generated
+        function updateQuestion() {
+            currentQuestionIndex = (currentQuestionIndex + 1) % questions.length; // Cycle through questions
+            questionElement.textContent = questions[currentQuestionIndex];
+        }
 
         function updateTranscriptions(sentences) {
             // Clear existing lists
@@ -151,6 +169,7 @@
                     const imagePath = message.data.image_path;
                     console.log("Image update received:", imagePath);
                     imageElement.src = `${imagePath}?t=${new Date().getTime()}`; // Add timestamp to bypass cache
+                    updateQuestion(); // Update the question after the image is updated
                 }
             } catch (error) {
                 console.error("Error processing WebSocket message:", error);
