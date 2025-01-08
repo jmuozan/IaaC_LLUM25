@@ -3,9 +3,11 @@ from collections import deque
 from scripts.audioprocessor import AudioProcessor
 from scripts.transcribe_audio import transcribe_audio
 from scripts.history_manager import append_to_history, add_sentences_in_progress, finalize_sentences 
+from scripts.supabase_test import upload_image_and_save_to_db
 import requests
 import websockets
 import json
+import os
 
 # Constants
 AUDIO_DIR = "scripts/static/audio"
@@ -92,6 +94,13 @@ async def generate_image(websocket):
         response = requests.post(IMAGE_GENERATION_URL, json={"prompt": prompt})
         response.raise_for_status()
         image_path = response.json().get("image_path")
+        print(image_path)
+        # Map web path to local file path
+        local_image_path = os.path.join("scripts", image_path.lstrip("/"))  # Convert to local path
+        print(f"[INFO] Local image path: {local_image_path}")
+
+        # Upload the image and save to Supabase
+        upload_image_and_save_to_db(local_image_path, prompt)
 
          # Update sentences.json statuses
         update_sentence_status(package, "done")  # Mark the package as "done"
