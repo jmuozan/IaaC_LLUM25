@@ -115,9 +115,6 @@ async def generate_image(websocket):
         local_image_path = os.path.join("scripts", image_path.lstrip("/"))  # Convert to local path
         print(f"[INFO] Local image path: {local_image_path}")#
 
-        current_question = await fetch_current_question()
-        print(f"[DEBUG] Question used in Supabase upload: {current_question}")
-
         # Upload the image and save to Supabase
         upload_image_and_save_to_db(local_image_path, prompt, current_question)
 

@@ -110,6 +110,10 @@ async def websocket_endpoint(websocket: WebSocket):
                         await notify_clients("current_question", {"data": current_question})
                 elif event == "get_current_question":
                     await websocket.send_json({"event": "current_question", "data": current_question})
+            
+            except asyncio.CancelledError:
+                print("[INFO] WebSocket operation cancelled.")
+                break
 
             except Exception as e:
                 print(f"[ERROR] Failed to process WebSocket message: {e}")
