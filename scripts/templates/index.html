@@ -14,12 +14,12 @@
             <div class="left-header">Miralls de Manana - LLUM 2025</div>
             <div id="transcriptions">
                 <div id="in-progress-box" class="status-box">
+                    <div id="in-progress-list"></div>
                     <div class="processing-header">Processing</div>
-                    <ul id="in-progress-list"></ul>
                 </div>
                 <div id="done-box" class="status-box">
+                    <div id="done-list"></div>
                     <div class="generated-header">Vision Generated</div>
-                    <ul id="done-list"></ul>
                 </div>
                 
             </div>
@@ -49,20 +49,44 @@
 
         const questions = [
             "How will living in cities look like in the future?",
-            "What will transportation look like in 2050?",
+            "What will transportation look like in the future?",
             "How will AI impact daily life in urban areas?",
-            "What role will renewable energy play in future cities?",
-            "What challenges might arise in a sustainable city?",
-            "How can technology bridge gaps in city accessibility?"
+            "How will streets change in the future?",
+            "What does the future smell like?",
+            "What challenges do you see in the future?",
+            "How can technology bridge gaps in city accessibility?",
+            "How do you imagine the Urban Jungle?",
+            "How will people travel in the future?",
+            "How do you imagine public spaces in the future?",
+            "How will Barcelona Streets look like in the future?",
+            "How will children live like in the future?",
+            "What will we eat in the future?",
+            "How will animals live like in future cities?",
+            "What will we see in the museum in the future?"
         ];
 
         let currentQuestionIndex = 0;
+        
+        function getCurrentQuestion() {
+        return questions[currentQuestionIndex];
+        }
+
 
         // Update the question after an image is generated
         function updateQuestion() {
-            currentQuestionIndex = (currentQuestionIndex + 1) % questions.length; // Cycle through questions
-            questionElement.textContent = questions[currentQuestionIndex];
+            currentQuestionIndex = (currentQuestionIndex + 1) % questions.length;
+            const newQuestion = questions[currentQuestionIndex];
+            questionElement.textContent = newQuestion;
+
+            // Send the updated question to the server
+            ws.send(
+                JSON.stringify({
+                    event: "update_question",
+                    data: newQuestion,
+                })
+            );
         }
+
 
         function updateTranscriptions(sentences) {
             // Clear existing lists
@@ -100,6 +124,16 @@
                     if (message.event === "update_sentences" && message.data) {
                         console.log("Updating transcriptions:", message.data);
                         updateTranscriptions(message.data);
+                    }
+
+                    if (message.event === "get_current_question") {
+                        console.log("Server requested current question");
+                        ws.send(
+                            JSON.stringify({
+                                event: "current_question",
+                                data: questionElement.textContent, // Send the current question
+                            })
+                        );
                     }
 
                     if (message.event === "update_image" && message.data) {
@@ -155,17 +189,24 @@
                     return;
                 }
 
-                if (message.event === "init_sentences" && message.data) {
+                else if (message.event === "current_question") {
+                    console.log("Server requested current question");
+                    ws.send(
+                        JSON.stringify({
+                            event: "current_question",
+                            data: getCurrentQuestion() || "How will living in cities look like in the future ?",
+                        })
+                    );
+
+                } else if (message.event === "init_sentences" && message.data) {
                     console.log("Initializing sentences:", message.data);
                     updateTranscriptions(message.data);
-                }
 
-                if (message.event === "update_sentences") {
+                } else if (message.event === "update_sentences") {
                     console.log("Updating transcriptions:", message.data); // Debug log
                     updateTranscriptions(message.data);
-                }
 
-                if (message.event === "update_image" && message.data) {
+                } else if (message.event === "update_image" && message.data) {
                     const imagePath = message.data.image_path;
                     console.log("Image update received:", imagePath);
                     imageElement.src = `${imagePath}?t=${new Date().getTime()}`; // Add timestamp to bypass cache

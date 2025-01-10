@@ -18,7 +18,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 # Define bucket name
 BUCKET_NAME = "created_images"
 
-def upload_image_and_save_to_db(image_path, prompt):
+def upload_image_and_save_to_db(image_path, prompt, current_question):
     try:
        # Ensure the full path is used
         absolute_image_path = os.path.abspath(image_path)
@@ -36,7 +36,7 @@ def upload_image_and_save_to_db(image_path, prompt):
         print(f"[INFO] Image uploaded: {public_url}")
 
         # Save transcription and image URL to the database
-        data = {"transcription": prompt, "image_url": public_url}
+        data = {"transcription": prompt, "image_url": public_url, "question": current_question}
         save_response = supabase.table("transcriptions").insert(data).execute()
         print("[SUCCESS] Data saved to database:", save_response)
         

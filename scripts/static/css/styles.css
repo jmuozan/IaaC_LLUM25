@@ -86,15 +86,14 @@ img {
 .left-header {
   position: sticky;
   top: 0;
-  margin-bottom: 50px;
+  margin-bottom: 20px;
   background: #000;
   color: #fff;
   padding: 10px 0px;
   width: 100%;
-  border-bottom: 2px solid mediumspringgreen;
+  border-bottom: 2px solid rgb(56, 56, 56);
   z-index: 1; /* Keep it above the text */
   font-size: 17px;
-  font-weight: bold;
   text-align: left;
 }
 
@@ -139,6 +138,8 @@ img {
   border: 3px solid blue;
   animation: pulse 1s infinite;
   margin-block-end: 10px;
+  border-bottom: 2px solid blue;
+  gap: 10px;
 }
 
 .processing-header{
@@ -146,35 +147,45 @@ img {
   animation: pulse 1s infinite;
   font-size: 17px;
   font-weight: bold;
+  width: 100%;
+  text-align: end;
+  padding-top: 5px;
 }
 
 .generated-header{
   color: mediumspringgreen;
-  animation: pulse 1s infinite;
   font-size: 17px;
   font-weight: bold;
+  width: 100%;
+  text-align: end;
+  padding-top: 5px;
 }
 
 #done-box {
   padding: 10px;
   border: 3px solid mediumspringgreen;
+  gap: 10px;
 }
 
 li {
   font-size: 17px;
-  list-style-type:square;
-  padding: 0; /* Removes default padding */
+  list-style-type:none;
   margin: 0; /* Removes default margin */
+  gap: 10px;
+  padding-top: 5px;
+  padding-bottom: 10px;
 }
 
 li.in-progress {
   color: rgb(255, 255, 255);
   font-weight: bold;
   column-gap: 10px;
+  border-bottom: 2px solid rgba(0, 0, 255, 0.300);
 }
 
 li.done {
   color: rgb(180, 180, 180);
+  border-bottom: 2px solid rgba(0, 250, 154, 0.300);
 }
 
 .prompt-frame.complete {
@@ -192,3 +203,4 @@ li.done {
 h2{
   font-size: 17px;
 }
+

@@ -15,11 +15,11 @@ WEBSOCKET_URL = "ws://127.0.0.1:8001/ws"
 IMAGE_GENERATION_URL = "http://127.0.0.1:8003/generate-image"
 UPDATE_SENTENCES_URL = "http://127.0.0.1:8001/update-sentences"
 UPDATE_IMAGE_URL = "http://127.0.0.1:8001/update-image"
+CURRENT_QUESTION_URL = "http://127.0.0.1:8001/current-question"
 PACKAGE_SIZE = 3  # Number of sentences per image generation
 SENTENCES_FILE = "scripts/sentences.json"
 # Queue to hold transcriptions for batching
 transcription_queue = deque(maxlen=PACKAGE_SIZE)
-
 # Graceful shutdown flag
 shutdown_flag = False
 
@@ -82,6 +82,19 @@ async def handle_audio_processing(websocket):
         except Exception as e:
             print(f"[ERROR] Audio processing error: {e}")
 
+async def fetch_current_question():
+    """Fetch the current question from the app server."""
+    try:
+        response = requests.get(CURRENT_QUESTION_URL)
+        response.raise_for_status()
+        question_data = response.json()
+        current_question = question_data.get("current_question", "How will living in cities look like in the future ?")
+        print(f"[INFO] Current question fetched: {current_question}")
+        return current_question
+    except requests.RequestException as e:
+        print(f"[ERROR] Failed to fetch current question: {e}")
+        return "Default question"
+    
 # Image generation process
 async def generate_image(websocket):
     """Generate an image using the top 3 sentences."""
@@ -90,6 +103,9 @@ async def generate_image(websocket):
         package = list(transcription_queue)
         prompt = " ".join(package)
 
+        current_question = await fetch_current_question()
+        print(f"[DEBUG] Question used in Supabase upload: {current_question}")
+
         # Generate the image
         response = requests.post(IMAGE_GENERATION_URL, json={"prompt": prompt})
         response.raise_for_status()
@@ -97,10 +113,13 @@ async def generate_image(websocket):
         print(image_path)
         # Map web path to local file path
         local_image_path = os.path.join("scripts", image_path.lstrip("/"))  # Convert to local path
-        print(f"[INFO] Local image path: {local_image_path}")
+        print(f"[INFO] Local image path: {local_image_path}")#
+
+        current_question = await fetch_current_question()
+        print(f"[DEBUG] Question used in Supabase upload: {current_question}")
 
         # Upload the image and save to Supabase
-        upload_image_and_save_to_db(local_image_path, prompt)
+        upload_image_and_save_to_db(local_image_path, prompt, current_question)
 
          # Update sentences.json statuses
         update_sentence_status(package, "done")  # Mark the package as "done"
