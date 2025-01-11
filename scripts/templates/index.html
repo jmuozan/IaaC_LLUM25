@@ -126,24 +126,23 @@
                         updateTranscriptions(message.data);
                     }
 
-                    if (message.event === "get_current_question") {
-                        console.log("Server requested current question");
-                        ws.send(
-                            JSON.stringify({
-                                event: "current_question",
-                                data: questionElement.textContent, // Send the current question
-                            })
-                        );
+                    if (message.event === "current_question" && message.data) {
+                        questionElement.textContent = message.data.question;
                     }
 
                     if (message.event === "update_image" && message.data) {
                         const imagePath = message.data.image_path;
                         console.log("Image update received:", imagePath);
                         imageElement.src = `${imagePath.replace(/\\/g, "/")}?t=${new Date().getTime()}`;
+                        updateQuestion()
                     }
                 } catch (error) {
                     console.error("Error processing WebSocket message:", error);
                 }
+            };
+            ws.onclose = (event) => {
+                    console.warn("WebSocket connection closed. Reconnecting in 5 seconds...", event);
+                    setTimeout(connectWebSocket, 5000); // Reconnect after 5 seconds
             };
         }
 
