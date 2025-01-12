@@ -4,6 +4,7 @@ from scripts.audioprocessor import AudioProcessor
 from scripts.transcribe_audio import transcribe_audio
 from scripts.history_manager import append_to_history, add_sentences_in_progress, finalize_sentences 
 from scripts.supabase_test import upload_image_and_save_to_db
+from scripts.osc_receiver import start_osc_receiver
 import requests
 import websockets
 import json
@@ -18,9 +19,15 @@ UPDATE_IMAGE_URL = "http://127.0.0.1:8001/update-image"
 CURRENT_QUESTION_URL = "http://127.0.0.1:8001/current-question"
 PACKAGE_SIZE = 3  # Number of sentences per image generation
 SENTENCES_FILE = "scripts/sentences.json"
+
+# Add these definitions
+OSC_HOST = "0.0.0.0"  # Address the OSC receiver will bind to
+OSC_PORT = 8009       # Port the OSC receiver will listen on
+
 # Queue to hold transcriptions for batching
 transcription_queue = deque(maxlen=PACKAGE_SIZE)
-# Graceful shutdown flag
+osc_queue = asyncio.Queue()
+is_recording = False
 shutdown_flag = False
 
 def update_sentence_status(sentences, status):
@@ -45,42 +52,67 @@ def update_sentence_status(sentences, status):
     except Exception as e:
         print(f"[ERROR] Failed to update sentence statuses: {e}")
 
-# Transcription processing
-async def handle_audio_processing(websocket):
-    """Continuously process audio and send transcriptions."""
+
+async def handle_osc_messages(websocket):
+    """Handle OSC messages, manage recording, and process transcription."""
+    global is_recording
     audio_processor = AudioProcessor()
+    # Transcription processing
 
     while not shutdown_flag:
         try:
-            # Record audio
-            audio_path = await asyncio.to_thread(audio_processor.record_and_save, AUDIO_DIR)
+            # Check for new OSC messages
+            if not osc_queue.empty():
+                message = await osc_queue.get()
 
-            # Skip silent audio
-            if await asyncio.to_thread(audio_processor.is_silent, audio_path):
-                continue
+                if message == "record":
+                    is_recording = True
+                    print("[INFO] Recording triggered...")
 
-            # Transcribe the audio
-            transcription = await asyncio.to_thread(transcribe_audio, audio_path)
-            if not transcription.strip():
-                continue
+                elif message == "pause":
+                    print("[INFO] Pausing recording...")
+                    is_recording = False
 
-            # Append transcription to queue and history
-            transcription_queue.append(transcription.strip())
-            append_to_history([transcription.strip()])
-            updated_sentences = add_sentences_in_progress([transcription.strip()])
+            if is_recording:
+                print("[INFO] Recording...")
+                # Keep recording until 3 sentences are transcribed
+                try:
+                    # Record audio
+                    audio_path = await asyncio.to_thread(audio_processor.record_and_save, AUDIO_DIR)
 
-            # Notify WebSocket clients
-            requests.post(UPDATE_SENTENCES_URL, json=updated_sentences)
-            # If we have enough sentences in the queue, generate an image
-            if len(transcription_queue) == PACKAGE_SIZE:
-                await generate_image(websocket)
+                    # Check if the audio is silent
+                    if await asyncio.to_thread(audio_processor.is_silent, audio_path):
+                        print("[WARNING] Silent audio detected. Retrying...")
+                        continue
 
-            await asyncio.sleep(1)  # Optional delay
-        except asyncio.CancelledError:
-            print("[INFO] Audio processing task canceled.")
-            break
+                    # Transcribe audio
+                    transcription = await asyncio.to_thread(transcribe_audio, audio_path)
+                    if not transcription.strip():
+                        print("[WARNING] Empty transcription. Retrying...")
+                        continue
+
+                    # Process valid transcription
+                    transcription_queue.append(transcription.strip())
+                    append_to_history([transcription.strip()])
+                    updated_sentences = add_sentences_in_progress([transcription.strip()])
+                    requests.post(UPDATE_SENTENCES_URL, json=updated_sentences)
+                    print(f"[INFO] Collected {len(transcription_queue)} transcriptions.")
+
+                    # Proceed to image generation if 3 transcriptions are collected
+                    if len(transcription_queue) == PACKAGE_SIZE:
+                        await generate_image(websocket, transcription_queue)
+                        transcription_queue.clear()
+
+                except Exception as e:
+                    print(f"[ERROR] Error during recording or transcription: {e}")
+                    continue  # Retry recording in case of failure
+
+            # After completing a loop, re-check OSC message status
+            await asyncio.sleep(1)  # Short pause to avoid busy waiting
+
         except Exception as e:
-            print(f"[ERROR] Audio processing error: {e}")
+            print(f"[ERROR] Error handling OSC message: {e}")
+                
 
 async def fetch_current_question():
     """Fetch the current question from the app server."""
@@ -93,10 +125,10 @@ async def fetch_current_question():
         return current_question
     except requests.RequestException as e:
         print(f"[ERROR] Failed to fetch current question: {e}")
-        return "Default question"
+        return "How will living in cities look like in the future ?"
     
 # Image generation process
-async def generate_image(websocket):
+async def generate_image(websocket, transcription_queue):
     """Generate an image using the top 3 sentences."""
     try:
         # Prepare the prompt from the first PACKAGE_SIZE sentences
@@ -135,18 +167,20 @@ async def generate_image(websocket):
         print(f"[ERROR] Image generation failed: {e}")
 
 async def main():
-    """Main function to coordinate transcription and image generation."""
+    """Main function to coordinate OSC, audio, and WebSocket communication."""
     global shutdown_flag
+
+    osc_transport, osc_protocol = await start_osc_receiver(osc_queue, host=OSC_HOST, port=OSC_PORT)
+
     try:
         async with websockets.connect(WEBSOCKET_URL) as websocket:
             print("[INFO] Connected to WebSocket")
-            await handle_audio_processing(websocket)
-    except websockets.exceptions.ConnectionClosedError as e:
-        print(f"[ERROR] WebSocket closed: {e}")
-    except asyncio.CancelledError:
-        print("[INFO] Main task canceled.")
+            await asyncio.gather(handle_osc_messages(websocket))
+    except Exception as e:
+        print(f"[ERROR] {e}")
     finally:
-        shutdown_flag = True  # Signal shutdown to all tasks
+        shutdown_flag = True
+        osc_transport.close()
         print("[INFO] Shutting down gracefully...")
 
 if __name__ == "__main__":
