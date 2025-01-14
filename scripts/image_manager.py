@@ -27,6 +27,8 @@ async def generate_image_endpoint(request: Request):
       # Read the prompt from the request payload
     data = await request.json()
     combined_prompt = data.get("prompt")
+    question = data.get("question")  # Get the question separately
+
     if not combined_prompt:
         return JSONResponse(content={"error": "Prompt is required"}, status_code=400)
 
@@ -35,21 +37,22 @@ async def generate_image_endpoint(request: Request):
     try:
         # Define the system role for the image generation
         system_role = (
-            "You are an AI model specializing in collaborative art generation for an outdoor light exhibition. "
-            "Your role is to merge multiple user inputs into an artistic handdrawing using neon colors. "
-            "Draw Realistic and relatable contents, that are easy to understand"
-            "Use thick outlines and strong neon colors on a consistent black background. "
-            #"Avoid photorealism; ensure the style is abstract, bold, and highly contrasting."
-            "Avoid violence, brutal or sexual outputs"
+            "You are an AI model specializing in collaborative art generation for an outdoor light exhibition in Poblenou, Barcelona."
+            "Your role is to merge multiple user inputs that answer a question into an artistic handdrawing using neon colors."
+            "Draw Realistic and relatable contents, that are easy to understand."
+            "Use thick outlines and strong neon colors on a consistent black background."
+            "Avoid photorealism; ensure the style is abstract, bold, and highly contrasting."
+            "Avoid violence, brutal or sexual outputs."
         )
 
         # Model the final prompt
         final_prompt = (
             f"{system_role}\n\n"
-            f"Here is the collaborative input: {combined_prompt}.\n"
-            "Create a single, cohesive artwork based on these inputs."
+            f"Here is the Question: {question}\n"
+            f"Here is the collaborative answer: {combined_prompt}.\n"
+            "Create a single, cohesive artwork based on these answers."
         )
-
+        print(final_prompt)
         # Generate image with the modeled prompt
         image_path = generate_image(final_prompt)
         # Call your image generation logic

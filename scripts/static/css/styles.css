@@ -1,7 +1,75 @@
 /* General Styles */
+@font-face {
+  font-family: Roboto-Bold;
+  src: url("/static/Fonts/Roboto-Bold.woff");
+}
+
+@font-face {
+  font-family: Roboto-Regular;
+  src: url("/static/Fonts/Roboto-Regular.woff");
+}
+
+@font-face {
+  font-family: Roboto-Black;
+  src: url("/static/Fonts/Roboto-Black.woff");
+}
+
+/* Fade-in and fade-out for transcriptions */
+@keyframes fadeIn {
+  from {
+      opacity: 0;
+  }
+  to {
+      opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+      opacity: 1;
+  }
+  to {
+      opacity: 0;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in forwards;
+  display: block;
+}
+
+.fade-out {
+  animation: fadeOut 0.5s ease-out forwards;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Dissolve/Resolve for image */
+.dissolve {
+  animation: fadeOut 0.5s ease-out forwards, fadeIn 0.5s ease-in 0.5s forwards;
+}
+
+/* Typewriter effect for questions */
+@keyframes typewriter {
+  from {
+      width: 0;
+  }
+  to {
+      width: 100%;
+  }
+}
+
+.typewriter {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 2px solid;
+  animation: typewriter 3s steps(30, end) 1s forwards;
+}
+
 body {
   margin: 0;
-  font-family: 'Roboto Mono', monospace;
+  font-family: 'Roboto-Regular';
   display: flex;
   justify-content: center;
   align-items: center;
@@ -10,6 +78,7 @@ body {
   height: 100vh;
   overflow: hidden;
 }
+
 
 .container {
   display: flex;
@@ -33,7 +102,7 @@ body {
 }
 
 /* Right Panel */
-.right {
+.middle {
   flex: 0 0 auto;
   display: flex;
   justify-content: center;
@@ -41,14 +110,21 @@ body {
   background: #000000;
 }
 
+.right{
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  flex: 1;
+}
+
 .question {
   display: flex;
+  flex-direction: column;
   width: auto;
   flex: 1;
   color: #ffffff;
-  font-family: 'Roboto Mono', monospace;
-  font-size: 48px;
-  padding: 20px;
+  font-family: 'Roboto-Black';
+  font-size: 64px;
 }
 
 img {
@@ -93,7 +169,7 @@ img {
   width: 100%;
   border-bottom: 2px solid rgb(56, 56, 56);
   z-index: 1; /* Keep it above the text */
-  font-size: 17px;
+  font-size: 16px;
   text-align: left;
 }
 
@@ -116,7 +192,7 @@ img {
 
 #transcription-list li {
     margin: 10px 0;
-    font-family: 'Roboto Mono', monospace;
+    font-family: 'Roboto';
     list-style-type: none; 
     gap: 10px;
 }
@@ -134,8 +210,15 @@ img {
 }
 
 #in-progress-box{
-  padding: 10px;
-  border: 3px solid blue;
+  border: 3px solid rgb(255, 255, 255);
+  margin-block-end: 10px;
+  border-bottom: 2px solid rgb(196, 196, 196);
+  gap: 10px;
+  flex-direction: column;
+}
+
+#in-progress-box.processing{
+  border: 3px solid rgb(85, 51, 255);
   animation: pulse 1s infinite;
   margin-block-end: 10px;
   border-bottom: 2px solid blue;
@@ -143,34 +226,41 @@ img {
 }
 
 .processing-header{
-  color: blue;
-  animation: pulse 1s infinite;
-  font-size: 17px;
+  background-color: rgb(255, 255, 255);
+  color: rgb(0, 0, 0);
+  font-size: 16px;
   font-weight: bold;
-  width: 100%;
   text-align: end;
   padding-top: 5px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 10px;
 }
 
 .generated-header{
-  color: mediumspringgreen;
-  font-size: 17px;
+  background-color: rgb(26, 255, 100);
+  color: rgb(0, 0, 0);
+  font-size: 16px;
   font-weight: bold;
-  width: 100%;
   text-align: end;
   padding-top: 5px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 10px;
 }
 
 #done-box {
-  padding: 10px;
-  border: 3px solid mediumspringgreen;
+  border: 3px solid rgb(26, 255, 100);
   gap: 10px;
+  flex-direction: column;
 }
 
 li {
-  font-size: 17px;
+  font-size: 16px;
   list-style-type:none;
-  margin: 0; /* Removes default margin */
+  margin: 10px; /* Removes default margin */
   gap: 10px;
   padding-top: 5px;
   padding-bottom: 10px;
@@ -178,14 +268,13 @@ li {
 
 li.in-progress {
   color: rgb(255, 255, 255);
-  font-weight: bold;
   column-gap: 10px;
-  border-bottom: 2px solid rgba(0, 0, 255, 0.300);
+  border-bottom: 2px solid rgba(85, 85, 85, 0.3);
 }
 
 li.done {
   color: rgb(180, 180, 180);
-  border-bottom: 2px solid rgba(0, 250, 154, 0.300);
+  border-bottom: 2px solid rgba(85, 85, 85, 0.3);
 }
 
 .prompt-frame.complete {
@@ -202,5 +291,34 @@ li.done {
 
 h2{
   font-size: 17px;
+}
+
+.status-box {
+  color: #ffffff;
+  background-color: #000000;
+  padding: 10px;
+  display: flex;
+  flex-direction: row;
+  border: 3px solid rgb(53, 53, 53);
+  margin-block-end: 10px;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.status-icon {
+  font-size: 16px;
+  min-width: 24px;
+  height: 24px;
+  display: block;
+}
+
+.image {
+  width: 100%;
+  height: auto,
+}
+
+.status-text {
+  font-size: 16px;
+  font-weight: bold;
 }
 

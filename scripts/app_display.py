@@ -55,6 +55,18 @@ async def update_sentences(request: Request):
     await notify_clients("update_sentences", data)
     return {"status": "success"}
 
+@app.post("/state-update")
+async def state_update(request: Request):
+    """Notify WebSocket clients of recording and transcribing states."""
+    data = await request.json()
+    state = data.get("state")
+    if state:
+        await notify_clients("state_update", {"state": state})
+        print(f"[INFO] State updated to: {state}")
+        return {"status": "success"}
+    return {"error": "Invalid state"}, 400
+
+
 @app.post("/update-image")
 async def update_image(request: Request):
     data = await request.json()

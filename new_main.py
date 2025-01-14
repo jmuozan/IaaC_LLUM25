@@ -17,6 +17,7 @@ IMAGE_GENERATION_URL = "http://127.0.0.1:8003/generate-image"
 UPDATE_SENTENCES_URL = "http://127.0.0.1:8001/update-sentences"
 UPDATE_IMAGE_URL = "http://127.0.0.1:8001/update-image"
 CURRENT_QUESTION_URL = "http://127.0.0.1:8001/current-question"
+UPDATE_STATE_URL = "http://127.0.0.1:8001/state-update"
 PACKAGE_SIZE = 3  # Number of sentences per image generation
 SENTENCES_FILE = "scripts/sentences.json"
 
@@ -52,6 +53,14 @@ def update_sentence_status(sentences, status):
     except Exception as e:
         print(f"[ERROR] Failed to update sentence statuses: {e}")
 
+async def update_state(state):
+    """Send state update to the interface."""
+    try:
+        response = requests.post(UPDATE_STATE_URL, json={"state": state})
+        response.raise_for_status()
+        print(f"[INFO] State updated to: {state}")
+    except requests.RequestException as e:
+        print(f"[ERROR] Failed to update state: {e}")
 
 async def handle_osc_messages(websocket):
     """Handle OSC messages, manage recording, and process transcription."""
@@ -68,33 +77,41 @@ async def handle_osc_messages(websocket):
                 if message == "record":
                     is_recording = True
                     print("[INFO] Recording triggered...")
+                    # Notify the interface about the recording state
 
                 elif message == "pause":
                     print("[INFO] Pausing recording...")
                     is_recording = False
+                    await update_state("idle")
 
             if is_recording:
                 print("[INFO] Recording...")
                 # Keep recording until 3 sentences are transcribed
                 try:
+                    await update_state("recording")
                     # Record audio
                     audio_path = await asyncio.to_thread(audio_processor.record_and_save, AUDIO_DIR)
 
                     # Check if the audio is silent
                     if await asyncio.to_thread(audio_processor.is_silent, audio_path):
+                        await update_state("idle")
                         print("[WARNING] Silent audio detected. Retrying...")
                         continue
+
+                    await update_state("transcribing")
 
                     # Transcribe audio
                     transcription = await asyncio.to_thread(transcribe_audio, audio_path)
                     if not transcription.strip():
                         print("[WARNING] Empty transcription. Retrying...")
+                        await update_state("idle")
                         continue
 
                     # Process valid transcription
                     transcription_queue.append(transcription.strip())
                     append_to_history([transcription.strip()])
                     updated_sentences = add_sentences_in_progress([transcription.strip()])
+                    await update_state("idle")
                     requests.post(UPDATE_SENTENCES_URL, json=updated_sentences)
                     print(f"[INFO] Collected {len(transcription_queue)} transcriptions.")
 
@@ -137,18 +154,21 @@ async def generate_image(websocket, transcription_queue):
 
         current_question = await fetch_current_question()
         print(f"[DEBUG] Question used in Supabase upload: {current_question}")
+        await update_state("image_processing")
 
         # Generate the image
-        response = requests.post(IMAGE_GENERATION_URL, json={"prompt": prompt})
+        response = requests.post(IMAGE_GENERATION_URL, json={"prompt": prompt, "question": current_question})
         response.raise_for_status()
         image_path = response.json().get("image_path")
         print(image_path)
         # Map web path to local file path
         local_image_path = os.path.join("scripts", image_path.lstrip("/"))  # Convert to local path
         print(f"[INFO] Local image path: {local_image_path}")#
+        await update_state("image_generated")
 
         # Upload the image and save to Supabase
         upload_image_and_save_to_db(local_image_path, prompt, current_question)
+        await update_state("image_saved")
 
          # Update sentences.json statuses
         update_sentence_status(package, "done")  # Mark the package as "done"

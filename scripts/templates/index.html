@@ -11,26 +11,52 @@
     <div class="container">
         <!-- Left: Falling Transcriptions -->
         <div class="left">
-            <div class="left-header">Miralls de Manana - LLUM 2025</div>
             <div id="transcriptions">
-                <div id="in-progress-box" class="status-box">
-                    <div id="in-progress-list"></div>
-                    <div class="processing-header">Processing</div>
+                <div class="status-box" id="recording-box">
+                    <div class="status-icon">
+                        <img src="/static/Icons/sound.gif" alt="audio gif" style= "width:24px; height:24px;"></img>
+                    </div>
+                    <div class="status-text">recording</div>
                 </div>
-                <div id="done-box" class="status-box">
+                
+                <div class="status-box" id="transcribing-box">
+                    <div class="status-icon">
+                        <img src="/static/Icons/write.gif"alt="writing gif" style= "width:24px; height:24px;"></img>
+                    </div>
+                    <div class="status-text">transcribing</div>
+                </div>                
+                <div id="in-progress-box">
+                    <div id="in-progress-list"></div>
+                    <div class="processing-header">
+                        <div class="status-icon" id="processing-icon">
+                            <img src="/static/Icons/counter.gif" alt="loading gif" id="processing-icon" style= "width:24px; height:24px;"></img>
+                        </div>
+                        <div class="status-text" id="processing-text">collecting</div>
+                    </div>
+                </div>
+                <div id="done-box">
                     <div id="done-list"></div>
-                    <div class="generated-header">Vision Generated</div>
+                    <div class="generated-header">
+                        <div class="status-icon" id="done-icon">
+                            <img src="/static/Icons/upload.gif" alt="check gif" id="done-icon" style= "width:24px; height:24px;"></img>
+                        </div>
+                        <div class="status-text" id="done-text">image generated</div>
+                    </div>
                 </div>
                 
             </div>
         </div>
         <!-- Right: Responsive Image -->
-        <div class="right">
+        <div class="middle">
             <img src="/static/Generated_Images/loading_animation2.gif" alt="Generated Image" id="image">
-        </div>  
-        <div class="question" id="question">
-            How will living in cities look like in the future ?
-        </div>      
+        </div> 
+        <div class="right">
+            <div class="left-header">Miralls de Manana - LLUM 2025</div>
+            <div class="question" id="question">
+                How will living in cities look like in the future ?
+            </div> 
+        </div> 
+             
     </div>
 
     <!-- JavaScript for WebSocket -->
@@ -77,6 +103,7 @@
             currentQuestionIndex = (currentQuestionIndex + 1) % questions.length;
             const newQuestion = questions[currentQuestionIndex];
             questionElement.textContent = newQuestion;
+            updateQuestionWithTypewriter(newQuestion);
 
             // Send the updated question to the server
             ws.send(
@@ -86,28 +113,90 @@
                 })
             );
         }
+        function updateQuestionWithTypewriter(newQuestion) {
+            const questionElement = document.getElementById("question");
 
+            questionElement.textContent = ""; // Clear current content
 
+            let charIndex = 0;
+            const typingInterval = setInterval(() => {
+                if (charIndex < newQuestion.length) {
+                    questionElement.textContent += newQuestion[charIndex];
+                    charIndex++;
+                } else {
+                    clearInterval(typingInterval);
+                }
+            }, 100); // Typewriter speed (100ms per character)
+        }
+        // Helper functions
+        function fadeIn(element) {
+            element.style.opacity = 0;
+            element.style.display = "block";
+            setTimeout(() => {
+                element.style.transition = "opacity 0.5s";
+                element.style.opacity = 1;
+            }, 10);
+        }
+
+        function fadeOut(element) {
+            element.style.transition = "opacity 0.5s";
+            element.style.opacity = 0;
+            setTimeout(() => {
+                element.style.display = "none";
+            }, 500); // Match the transition duration
+        }
+
+        function updateImageWithDissolve(newImagePath) {
+            const imageElement = document.getElementById("image");
+
+            fadeOut(imageElement);
+
+            setTimeout(() => {
+                imageElement.src = `${newImagePath}?t=${new Date().getTime()}`;
+                fadeIn(imageElement);
+            }, 500); // Match fade-out duration
+        }
         function updateTranscriptions(sentences) {
             // Clear existing lists
             const inProgressList = document.getElementById("in-progress-list");
             const doneList = document.getElementById("done-list");
-            inProgressList.innerHTML = "";
-            doneList.innerHTML = "";
+            const inProgressBox = document.getElementById("in-progress-box");
+            const doneBox = document.getElementById("done-box");
+            // Clear and fade-out old content
+            fadeOut(inProgressList);
+            fadeOut(doneList);
 
-            // Iterate through sentences and append to their respective lists
-            sentences.forEach((sentence) => {
-                const listItem = document.createElement("li");
-                listItem.textContent = sentence.text;
+            setTimeout(() => {
 
-                if (sentence.status === "in-progress") {
-                    listItem.classList.add("in-progress");
-                    inProgressList.appendChild(listItem);
-                } else if (sentence.status === "done") {
-                    listItem.classList.add("done");
-                    doneList.appendChild(listItem);
-                }
-            });
+                inProgressList.innerHTML = "";
+                doneList.innerHTML = "";
+
+                let hasInProgress = false;
+                let hasDone = false;
+
+                // Iterate through sentences and append to their respective lists
+                sentences.forEach((sentence) => {
+                    const listItem = document.createElement("li");
+                    listItem.textContent = sentence.text;
+
+                    if (sentence.status === "in-progress") {
+                        hasInProgress = true;
+                        listItem.classList.add("in-progress");
+                        inProgressList.appendChild(listItem);
+                    } else if (sentence.status === "done") {
+                        hasDone = true;
+                        listItem.classList.add("done");
+                        doneList.appendChild(listItem);
+                    }
+                });
+                // Fade-in new content
+                fadeIn(inProgressList);
+                fadeIn(doneList);
+            }, 500); // Match fade-out duration
+
+            // Toggle visibility based on content
+            inProgressBox.style.display = hasInProgress ? "block" : "none";
+            doneBox.style.display = hasDone ? "block" : "none";
         }
 
         function connectWebSocket() {
@@ -133,12 +222,81 @@
                     if (message.event === "update_image" && message.data) {
                         const imagePath = message.data.image_path;
                         console.log("Image update received:", imagePath);
-                        imageElement.src = `${imagePath.replace(/\\/g, "/")}?t=${new Date().getTime()}`;
+                        updateImageWithDissolve(imagePath);
+                        // imageElement.src = `${imagePath.replace(/\\/g, "/")}?t=${new Date().getTime()}`;
                         updateQuestion()
                     }
+
+                    if (message.event === "state_update") {
+                        // Handle recording, transcribing, and processing states
+                        const state = message.data.state;
+                        const recordingBox = document.getElementById("recording-box");
+                        const transcribingBox = document.getElementById("transcribing-box");
+                        const inProgressBox = document.getElementById("in-progress-box");
+                        const doneBox = document.getElementById("done-box");
+                        const processingText = document.getElementById("processing-text");
+                        const processingIcon = document.getElementById("processing-icon img");
+                        const doneText = document.getElementById("status-text");
+                        const doneIcon = document.getElementById("status-icon img");
+
+                        console.log(`Updating state to: ${state}`); // Debugging log
+
+                        // Reset visibility for all boxes
+                        // Reset visibility for all boxes
+                        recordingBox.style.display = "none";
+                        transcribingBox.style.display = "none";
+                        doneBox.style.display = "none";
+                        inProgressBox.classList.remove("processing");
+                        
+                        // Handle recording state
+                        if (state === "recording") {
+                            recordingBox.classList.add("visible");
+                            inProgressBox.classList.remove("processing");
+                            processingText.textContent = "collecting";
+                            processingIcon.src = "/static/Icons/counter.gif";
+                        }
+                        // Handle transcribing state
+                        else if (state === "transcribing") {
+                            recordingBox.classList.add("visible");
+                            inProgressBox.classList.remove("processing");
+                            processingText.textContent = "collecting";
+                            processingIcon.src = "/static/Icons/writing.gif";
+                        }
+                        // Handle idle state
+                        else if (state === "idle") {
+                            recordingBox.style.visibility = "hidden";
+                            transcribingBox.style.visibility = "hidden";
+                            inProgressBox.classList.remove("processing");
+                            processingText.textContent = "collecting";
+                            processingIcon.src = "/static/Icons/loading.gif";
+                        }
+                        // Handle image processing state
+                        else if (state === "image_processing") {
+                            inProgressBox.classList.add(".processing");
+                            processingText.textContent = "generating";
+                            processingIcon.src = "/static/Icons/loading.gif";
+                        }  else if (state === "image_generated") {
+                            doneBox.classList.add("visible");
+                            doneText.textContent = "image generated";
+                            doneIcon.src = "/static/Icons/upload.gif"; // Set back to "check" icon
+                        }  else if (state === "image_saved") {
+                            recordingBox.style.visibility = "hidden";
+                            transcribingBox.style.visibility = "hidden";
+                            doneText.textContent = "image saved";
+                            doneIcon.src = "/static/Icons/check.gif"; // Set back to "check" icon
+                        }
+                        // Fallback for unknown states
+                        else {
+                            console.warn(`Unknown state: ${state}`);
+                            inProgressBox.classList.remove("processing");
+                            processingText.textContent = "no state";
+                            processingIcon.src = "/static/Icons/loading.gif";
+                        }
+                    }
+
                 } catch (error) {
                     console.error("Error processing WebSocket message:", error);
-                }
+                }       
             };
             ws.onclose = (event) => {
                     console.warn("WebSocket connection closed. Reconnecting in 5 seconds...", event);
@@ -182,13 +340,26 @@
             console.log("WebSocket message received:", event.data);
             try {
                 const message = JSON.parse(event.data);
+                if (message.event === "state_update") {
+                    // Handle recording and transcribing states
+                    const state = message.data.state;
+                    const recordingBox = document.getElementById("recording-box");
+                    const transcribingBox = document.getElementById("transcribing-box");
+                    if (state === "recording") {
+                        recordingBox.style.display = "block";
+                        transcribingBox.style.display = "none";
+                    } else if (state === "transcribing") {
+                        recordingBox.style.display = "none";
+                        transcribingBox.style.display = "block";
+                    } else if (state === "idle") {
+                        recordingBox.style.display = "none";
+                        transcribingBox.style.display = "none";
+                    }
 
-                if (message.event === "ping") {
+                } else if (message.event === "ping") {
                     console.log("Received ping from server."); // Ignore pings
                     return;
-                }
-
-                else if (message.event === "current_question") {
+                } else if (message.event === "current_question") {
                     console.log("Server requested current question");
                     ws.send(
                         JSON.stringify({
@@ -196,7 +367,6 @@
                             data: getCurrentQuestion() || "How will living in cities look like in the future ?",
                         })
                     );
-
                 } else if (message.event === "init_sentences" && message.data) {
                     console.log("Initializing sentences:", message.data);
                     updateTranscriptions(message.data);
@@ -210,11 +380,13 @@
                     console.log("Image update received:", imagePath);
                     imageElement.src = `${imagePath}?t=${new Date().getTime()}`; // Add timestamp to bypass cache
                     updateQuestion(); // Update the question after the image is updated
-                }
+                } 
             } catch (error) {
                 console.error("Error processing WebSocket message:", error);
             }
         };
+
+        
 
         ws.onerror = (error) => {
             console.error("WebSocket error:", error);

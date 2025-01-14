@@ -20,49 +20,6 @@ def append_to_history(transcriptions, history_file="history.txt", max_lines=6):
     except Exception as e:
         print(f"[ERROR] Failed to append to history: {e}")
 
-'''def update_sentences_json(history_file="history.txt", json_file=SENTENCES_FILE, max_sentences=6):
-    """
-    Sync `sentences.json` with the latest state of `history.txt`.
-    - Append new sentences as "in-progress".
-    - When an image is generated, mark the first 3 "in-progress" as "done".
-    - Keep the list at 6 entries: 3 "in-progress" + 3 "done".
-    """
-    try:
-        # Read the current state of `history.txt`
-        with open(history_file, "r", encoding="utf-8") as file:
-            history = [line.strip() for line in file.readlines()]
-
-        # Read or initialize the current sentences state
-        sentences = []
-        if os.path.exists(json_file):
-            with open(json_file, "r", encoding="utf-8") as json_f:
-                try:
-                    sentences = json.load(json_f)
-                except json.JSONDecodeError:
-                    pass
-
-        # Add new sentences from history
-        for line in history:
-            if not any(s["text"] == line for s in sentences):
-                sentences.append({"text": line, "status": "in-progress"})
-
-        # Enforce limits: 3 "in-progress" + 3 "done"
-        in_progress = [s for s in sentences if s["status"] == "in-progress"]
-        done = [s for s in sentences if s["status"] == "done"]
-
-        # Trim "done" sentences to a maximum of 3
-        done = done[-3:]
-
-        # Combine and save
-        updated_sentences = in_progress + done
-        with open(json_file, "w", encoding="utf-8") as json_f:
-            json.dump(updated_sentences[:max_sentences], json_f, indent=4)
-
-        print(f"[INFO] Updated sentences.json at {json_file}")
-        return updated_sentences
-    except Exception as e:
-        print(f"[ERROR] Failed to update sentences.json: {e}")
-        return []'''
 
 def add_sentences_in_progress(new_sentences):
     """
