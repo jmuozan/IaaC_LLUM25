@@ -52,7 +52,10 @@
         </div> 
         <div class="right">
             <div class="left-header">Miralls de Manana - LLUM 2025</div>
-            <div class="question" id="question">
+            <div class="question-english" id="question-english">
+                How will living in cities look like in the future ? 
+            </div> 
+            <div class="question-spanish" id="question-spanish">
                 How will living in cities look like in the future ?
             </div> 
         </div> 
@@ -71,10 +74,11 @@
         const IMAGE_TIMEOUT = 30000; // Reset image after 30 seconds
         let imageTimeout = null;
 
-        const questionElement = document.getElementById("question");
+        const questionElementEnglish = document.getElementById("question-english");
+        const questionElementSpanish = document.getElementById("question-english");
 
-        const questions = [
-            "How will living in cities look like in the future?",
+        const questionsEnglish = [
+            "How will living in cities look like in the future?", 
             "What will transportation look like in the future?",
             "How will AI impact daily life in urban areas?",
             "How will streets change in the future?",
@@ -91,37 +95,79 @@
             "What will we see in the museum in the future?"
         ];
 
-        let currentQuestionIndex = 0;
+        const questionsSpanish = [
+            "How will living in cities look like in the future?", 
+            "What will transportation look like in the future?",
+            "How will AI impact daily life in urban areas?",
+            "How will streets change in the future?",
+            "What does the future smell like?",
+            "What challenges do you see in the future?",
+            "How can technology bridge gaps in city accessibility?",
+            "How do you imagine the Urban Jungle?",
+            "How will people travel in the future?",
+            "How do you imagine public spaces in the future?",
+            "How will Barcelona Streets look like in the future?",
+            "How will children live like in the future?",
+            "What will we eat in the future?",
+            "How will animals live like in future cities?",
+            "What will we see in the museum in the future?"
+        ];
+
+        let currentQuestionIndexEnglish = 0;
+        let currentQuestionIndexSpanish = 0;
         
-        function getCurrentQuestion() {
-        return questions[currentQuestionIndex];
+        function getCurrentQuestionEnglish() {
+        return questionsEnglish[currentQuestionIndexEnglish];
+        }
+
+        function getCurrentQuestionSpanish() {
+        return questionsSpanish[currentQuestionIndexSpanish];
         }
 
 
         // Update the question after an image is generated
         function updateQuestion() {
-            currentQuestionIndex = (currentQuestionIndex + 1) % questions.length;
-            const newQuestion = questions[currentQuestionIndex];
-            questionElement.textContent = newQuestion;
-            updateQuestionWithTypewriter(newQuestion);
+            currentQuestionIndexEnglish = (currentQuestionIndexEnglish + 1) % questionsEnglish.length;
+            currentQuestionIndexSpanish = (currentQuestionIndexSpanish + 1) % questionsSpanish.length;
+            const newQuestionEnglish = questionsEnglish[currentQuestionIndexEnglish];
+            const newQuestionSpanish = questionsSpanish[currentQuestionIndexSpanish];
+            questionElementEnglish.textContent = newQuestionEnglish;
+            questionElementSpanish.textContent = newQuestionSpanish;
+            updateQuestionWithTypewriterEnglish(newQuestionEnglish);
+            updateQuestionWithTypewriterEnglish(newQuestionSpanish);
 
             // Send the updated question to the server
             ws.send(
                 JSON.stringify({
                     event: "update_question",
-                    data: newQuestion,
+                    data: newQuestionEnglish,
                 })
             );
         }
-        function updateQuestionWithTypewriter(newQuestion) {
-            const questionElement = document.getElementById("question");
+        function updateQuestionWithTypewriterEnglish(newQuestionEnglish) {
+            const questionElementEnglish = document.getElementById("question-english");
 
-            questionElement.textContent = ""; // Clear current content
+            questionElementEnglish.textContent = ""; // Clear current content
 
             let charIndex = 0;
             const typingInterval = setInterval(() => {
-                if (charIndex < newQuestion.length) {
-                    questionElement.textContent += newQuestion[charIndex];
+                if (charIndex < newQuestionEnglish.length) {
+                    questionElementEnglish.textContent += newQuestionEnglish[charIndex];
+                    charIndex++;
+                } else {
+                    clearInterval(typingInterval);
+                }
+            }, 100); // Typewriter speed (100ms per character)
+        }
+        function updateQuestionWithTypewriterSpanish(newQuestionEnglish) {
+            const questionElementSpanish = document.getElementById("question-spanish");
+
+            questionElementSpanish.textContent = ""; // Clear current content
+
+            let charIndex = 0;
+            const typingInterval = setInterval(() => {
+                if (charIndex < newQuestionSpanish.length) {
+                    questionElementSpanish.textContent += newQuestionSpanish[charIndex];
                     charIndex++;
                 } else {
                     clearInterval(typingInterval);
@@ -216,7 +262,7 @@
                     }
 
                     if (message.event === "current_question" && message.data) {
-                        questionElement.textContent = message.data.question;
+                        questionElementEnglish.textContent = message.data.question-english;
                     }
 
                     if (message.event === "update_image" && message.data) {

@@ -124,7 +124,17 @@ body {
   flex: 1;
   color: #ffffff;
   font-family: 'Roboto-Black';
-  font-size: 64px;
+  font-size: 32px;
+}
+
+.blabla {
+  display: flex;
+  flex-direction: column;
+  width: auto;
+  flex: 1;
+  color: #adadad;
+  font-family: 'Roboto-Black';
+  font-size: 24px;
 }
 
 img {
