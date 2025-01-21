@@ -176,7 +176,7 @@ img {
   margin-bottom: 20px;
   background: #000;
   color: #fff;
-  padding: 10px 0px;
+  padding-bottom: 10px;
   width: 100%;
   border-bottom: 2px solid rgb(56, 56, 56);
   z-index: 1; /* Keep it above the text */
@@ -221,15 +221,16 @@ img {
     animation: pulse 1s infinite;
 }
 
-#in-progress-box{
+.in-progress-box{
   border: 3px solid rgb(255, 255, 255);
   margin-block-end: 10px;
   border-bottom: 2px solid rgb(196, 196, 196);
-  gap: 10px;
+  gap: 10px;  
   flex-direction: column;
+  width: 100%;
 }
 
-#in-progress-box.processing{
+.in-progress-box.processing{
   border: 3px solid rgb(85, 51, 255);
   animation: pulse 1s infinite;
   margin-block-end: 10px;
@@ -264,7 +265,7 @@ img {
 }
 
 #done-box {
-  border: 3px solid rgb(26, 255, 100);
+  border: 2px solid rgb(26, 255, 100);
   gap: 10px;
   flex-direction: column;
 }
@@ -282,6 +283,7 @@ li.in-progress {
   color: rgb(255, 255, 255);
   column-gap: 10px;
   border-bottom: 2px solid rgba(85, 85, 85, 0.3);
+  font-weight: bold;
 }
 
 li.done {
@@ -290,7 +292,7 @@ li.done {
 }
 
 .prompt-frame.complete {
-  border: 3px solid mediumspringgreen;
+  border: 2px solid mediumspringgreen;
   animation: none;
   column-gap: 10px;
 }
@@ -305,22 +307,38 @@ h2{
   font-size: 17px;
 }
 
+.visuals-container{
+  display: flex;
+  flex-direction: column;
+  flex: auto;
+  padding: 96px;
+}
+
+.status-container{
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  width: 100%;
+}
+
 .status-box {
   color: #ffffff;
   background-color: #000000;
-  padding: 10px;
+  padding: 96px;
   display: flex;
-  flex-direction: row;
-  border: 3px solid rgb(53, 53, 53);
+  flex: content;
+  flex-direction: column;
   margin-block-end: 10px;
-  gap: 10px;
+  gap: 20px;
   justify-content: space-between;
+  justify-content: center;
+  align-items: center;
 }
 
 .status-icon {
   font-size: 16px;
-  min-width: 24px;
-  height: 24px;
+  min-width: 96px;
+  height: 96px;
   display: block;
 }
 

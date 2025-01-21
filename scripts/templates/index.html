@@ -22,46 +22,55 @@
                     How will living in cities look like in the future ? 
                 </div> 
              </div>
-             <div id="transcriptions">
-                <div class="status-box" id="recording-box">
-                    <div class="status-icon">
-                        <img src="/static/Icons/sound.gif" alt="audio gif" style= "width:24px; height:24px;"></img>
-                    </div>
-                    <div class="status-text">recording</div>
-                </div>
-                
-                <div class="status-box" id="transcribing-box">
-                    <div class="status-icon">
-                        <img src="/static/Icons/write.gif"alt="writing gif" style= "width:24px; height:24px;"></img>
-                    </div>
-                    <div class="status-text">transcribing</div>
-                </div>  
-                <div class="status-box" id="loading-box">
-                    <div class="status-icon">
-                        <img src="/static/Icons/loading.gif"alt="loading gif" style= "width:24px; height:24px;"></img>
-                    </div>
-                    <div class="status-text">processing</div>
-                </div>                
-                <div id="in-progress-box">
-                    <div id="in-progress-list"></div>
-                    <div class="processing-header">
-                        <div class="status-icon" id="processing-icon">
-                            <img src="/static/Icons/counter.gif" alt="loading gif" id="processing-icon" style= "width:24px; height:24px;"></img>
+             <div id="status-container" class="status-container">
+                <div id="visuals-container">
+                    <div class="status-box" id="recording-box">
+                        <div class="status-icon">
+                            <img src="/static/Icons/sound.gif" alt="audio gif" style= "width:96px; height:96px;"></img>
                         </div>
-                        <div class="status-text" id="processing-text">collecting</div>
+                        <div class="status-text">recording</div>
                     </div>
-                </div>
-                <div id="done-box">
-                    <div id="done-list"></div>
-                    <div class="generated-header">
-                        <div class="status-icon" id="done-icon">
-                            <img src="/static/Icons/check.gif" alt="check gif" id="done-icon" style= "width:24px; height:24px;"></img>
+                    
+                    <div class="status-box" id="transcribing-box">
+                        <div class="status-icon">
+                            <img src="/static/Icons/write.gif"alt="writing gif" style= "width:96px; height:96px;"></img>
                         </div>
-                        <div class="status-text" id="done-text">image generated</div>
-                    </div>
+                        <div class="status-text">transcribing</div>
+                    </div>  
+                    <div class="status-box" id="loading-box">
+                        <div class="status-icon">
+                            <img src="/static/Icons/loading.gif"alt="loading gif" style= "width:96px; height:96px;"></img>
+                        </div>
+                        <div class="status-text">gernerating image</div>
+                    </div>  
                 </div>
-                
-            </div>
+                <div id="transcriptions" class="transcriptions">        
+                    <div id="in-progress-box" class="in-progress-box">
+                        <div id="in-progress-list"></div>
+                        <div class="processing-header">
+                            <div class="collecting-icon" id="processing-icon">
+                                <img src="/static/Icons/counter.gif" alt="loading gif" id="processing-icon" style= "width:24px; height:24px;"></img>
+                            </div>
+                            <div class="status-text" id="processing-number">1</div>
+                            <div class="status-text" id="processing-number">2</div>
+                            <div class="status-text" id="processing-number">3</div>
+                            <div class="status-text" id="processing-number">collecting 3 Inputs</div>
+                        </div>
+                    </div>
+                    <div id="done-box">
+                        <div id="done-list"></div>
+                        <div class="generated-header">
+                            <div class="done-icon" id="done-icon">
+                                <img src="/static/Icons/check.gif" alt="check gif" id="done-icon" style= "width:24px; height:24px;"></img>
+                            </div>
+                            <div class="status-text" id="done-text">image generated</div>
+                        </div>
+                    </div>
+                    
+                </div>
+             </div>
+             
+             
              
         </div> 
              
@@ -287,6 +296,7 @@
                         const inProgressBox = document.getElementById("in-progress-box");
                         const loadingBox = document.getElementById("loading-box");
                         const doneBox = document.getElementById("done-box");
+                        const uploadBox = document.getElementById("upload-box")
                         const processingText = document.getElementById("processing-text");
                         const processingIcon = document.getElementById("processing-icon img");
                         const doneText = document.getElementById("status-text");
@@ -301,7 +311,9 @@
                         transcribingBox.style.display = "none";
                         doneBox.style.display = "none";
                         loadingBox.style.display = "none";
-                        inProgressBox.classList.remove("processing");
+                        inProgressBox.style.display = "none"
+                        uploadBox.style.display = "none"
+                        inProgressBox.classList.remove(".processing");
                         
                         // Handle recording state
                         if (state === "recording") {
@@ -313,7 +325,7 @@
                         // Handle transcribing state
                         else if (state === "transcribing") {
                             recordingBox.classList.add("visible");
-                            // inProgressBox.classList.remove("processing");
+                            inProgressBox.classList.remove(".processing");
                             // processingText.textContent = "collecting";
                             processingIcon.src = "/static/Icons/writing.gif";
                         }
@@ -321,25 +333,23 @@
                         else if (state === "idle") {
                             recordingBox.style.visibility = "hidden";
                             transcribingBox.style.visibility = "hidden";
-                            // inProgressBox.classList.remove("processing");
-                            processingText.textContent = "collecting";
-                            processingIcon.src = "/static/Icons/loading.gif";
+                            inProgressBox.classList.remove(".processing");
                         }
                         // Handle image processing state
                         else if (state === "image_processing") {
+                            recordingBox.style.visibility = "hidden";
+                            transcribingBox.style.visibility = "hidden";
                             inProgressBox.classList.add(".processing");
-                            processingText.textContent = "generating";
-                            processingIcon.src = "/static/Icons/loading.gif";
-                            loadingBox.style.visibility.add("visible");
+                            loadingBox.style.classList.add("visible");
                         }  else if (state === "image_generated") {
                             doneBox.classList.add("visible");
                             doneText.textContent = "image generated";
-                            doneIcon.src = "/static/Icons/upload.gif"; // Set back to "check" icon
+                            doneIcon.src = "/static/Icons/check.gif"; // Set back to "check" icon
                         }  else if (state === "image_saved") {
                             recordingBox.style.visibility = "hidden";
                             transcribingBox.style.visibility = "hidden";
                             doneText.textContent = "image saved";
-                            doneIcon.src = "/static/Icons/check.gif"; // Set back to "check" icon
+                            uploadBox.classList.add("visible")
                         }
                         // Fallback for unknown states
                         else {
@@ -404,15 +414,15 @@
                     if (state === "recording") {
                         recordingBox.style.display = "block";
                         transcribingBox.style.display = "none";
-                        loadingBox.stzle.display ="none"
+                        loadingBox.style.display ="none"
                     } else if (state === "transcribing") {
                         recordingBox.style.display = "none";
                         transcribingBox.style.display = "block";
-                        loadingBox.stzle.display ="none"
+                        loadingBox.style.display ="none"
                     } else if (state === "idle") {
                         recordingBox.style.display = "none";
                         transcribingBox.style.display = "none";
-                        loadingBox.stzle.display ="none"
+                        loadingBox.style.display ="none"
                     } 
                     else if (state === "image_processing") {
                         // inProgressBox.classList.add(".processing");
@@ -420,7 +430,7 @@
                         // processingIcon.src = "/static/Icons/loading.gif";
                         recordingBox.style.display = "none";
                         transcribingBox.style.display = "none";
-                        loadingBox.stzle.display ="block"
+                        loadingBox.style.display ="block"
                     }  else if (state === "image_generated") {
                         doneBox.classList.add("visible");
                         doneText.textContent = "image generated";
