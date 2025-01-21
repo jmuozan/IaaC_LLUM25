@@ -166,15 +166,15 @@ async def generate_image(websocket, transcription_queue):
         print(f"[INFO] Local image path: {local_image_path}")#
         await update_state("image_generated")
 
-        # Upload the image and save to Supabase
-        upload_image_and_save_to_db(local_image_path, prompt, current_question)
-        await update_state("image_saved")
-
          # Update sentences.json statuses
         update_sentence_status(package, "done")  # Mark the package as "done"
         requests.post(UPDATE_IMAGE_URL, json={"image_path": image_path})
         updated_sentences = finalize_sentences()
         requests.post(UPDATE_SENTENCES_URL, json=updated_sentences)
+
+        # Upload the image and save to Supabase
+        upload_image_and_save_to_db(local_image_path, prompt, current_question)
+        await update_state("image_saved")
 
 
         # Clear the processed sentences from the queue
