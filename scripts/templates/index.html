@@ -63,7 +63,7 @@
                             <div class="progress-icon">
                                 <img src="/static/Icons/counter.gif"alt="writing gif" style= "width:24px; height:24px;"></img>
                             </div>
-                            <div class="status-text" id="processing-number">collecting 3 Inputs</div>
+                            <div class="status-text" id="processing-number">collecting Inputs</div>
                         </div>
                     </div>
                     <div id="done-box">
@@ -256,7 +256,7 @@
             }, 500); // Match fade-out duration
         }
         function updateTranscriptions(sentences) {
-            console.log("Updating transcriptions:", sentences);
+            // console.log("Updating transcriptions:", sentences);
     
             const elements = {
                 inProgressList: document.getElementById("in-progress-list"),
@@ -358,7 +358,7 @@
             };
 
             ws.onmessage = (event) => {
-                console.log("WebSocket message received:", event.data);
+                // console.log("WebSocket message received:", event.data);
                 // Handle different message events
                 try {
                     const message = JSON.parse(event.data);

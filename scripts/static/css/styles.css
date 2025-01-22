@@ -82,8 +82,9 @@ body {
 
 .container {
   display: flex;
-  width: 100%;
-  height: 100%;
+  width: 1536px;
+  height: 512px;
+  overflow: hidden;
 }
 
 .left {
@@ -222,16 +223,14 @@ img {
 }
 
 .in-progress-box{
-  border: 3px solid rgb(255, 255, 255);
   margin-block-end: 10px;
-  border-bottom: 2px solid rgb(196, 196, 196);
+  border: 3px solid rgb(40,40,40);
   gap: 10px;  
   flex-direction: column;
-  width: 100%;
 }
 
 .in-progress-box.processing{
-  border: 3px solid rgb(85, 51, 255);
+  border: 3px solid rgb(40, 40, 40);
   animation: pulse 1s infinite;
   margin-block-end: 10px;
   border-bottom: 2px solid blue;
@@ -239,8 +238,8 @@ img {
 }
 
 .processing-header{
-  background-color: rgb(255, 255, 255);
-  color: rgb(0, 0, 0);
+  background-color: rgb(40, 40, 40);
+  color: rgb(255, 255, 255);
   font-size: 16px;
   font-weight: bold;
   text-align: end;
@@ -249,11 +248,14 @@ img {
   flex-direction: row;
   justify-content: space-between;
   padding: 10px;
+  padding-bottom: 0px;
+  padding-top: 0px;
+  align-items: center;
 }
 
 .generated-header{
-  background-color: rgb(26, 255, 100);
-  color: rgb(0, 0, 0);
+  background-color: rgb(85, 51, 255);
+  color: rgb(255, 255, 255);
   font-size: 16px;
   font-weight: bold;
   text-align: end;
@@ -262,10 +264,13 @@ img {
   flex-direction: row;
   justify-content: space-between;
   padding: 10px;
+  padding-bottom: 0px;
+  padding-top: 0px;
+  align-items: center;
 }
 
 #done-box {
-  border: 2px solid rgb(26, 255, 100);
+  border: 2px solid rgb(85, 51, 255);
   gap: 10px;
   flex-direction: column;
 }
@@ -284,6 +289,7 @@ li.in-progress {
   column-gap: 10px;
   border-bottom: 2px solid rgba(85, 85, 85, 0.3);
   font-weight: bold;
+  list-style:decimal;
 }
 
 li.done {
@@ -348,8 +354,10 @@ h2{
 }
 
 .status-text {
-  font-size: 16px;
-  font-weight: bold;
+  font-size: 12px;
+  font-family: Roboto-Bold;
   text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 150%;
 }
 
