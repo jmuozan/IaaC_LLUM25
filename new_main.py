@@ -25,6 +25,9 @@ SENTENCES_FILE = "scripts/sentences.json"
 OSC_HOST = "0.0.0.0"  # Address the OSC receiver will bind to
 OSC_PORT = 8009       # Port the OSC receiver will listen on
 
+# Add new constant
+UPDATE_COUNTER_URL = "http://127.0.0.1:8001/update-counter"
+
 # Queue to hold transcriptions for batching
 transcription_queue = deque(maxlen=PACKAGE_SIZE)
 osc_queue = asyncio.Queue()
@@ -62,6 +65,16 @@ async def update_state(state):
     except requests.RequestException as e:
         print(f"[ERROR] Failed to update state: {e}")
 
+# Add new function to update counter
+async def update_counter(count):
+    """Send counter update to the interface."""
+    try:
+        response = requests.post(UPDATE_COUNTER_URL, json={"count": count})
+        response.raise_for_status()
+    except requests.RequestException as e:
+        print(f"[ERROR] Failed to update counter: {e}")
+
+# Modify the handle_osc_messages function
 async def handle_osc_messages(websocket):
     """Handle OSC messages, manage recording, and process transcription."""
     global is_recording
@@ -114,10 +127,16 @@ async def handle_osc_messages(websocket):
                     await update_state("idle")
                     requests.post(UPDATE_SENTENCES_URL, json=updated_sentences)
                     # print(f"[INFO] Collected {len(transcription_queue)} transcriptions.")
+                    await update_state(f"box{len(transcription_queue)}")
+
+                    # Update counter
+                    await update_counter(len(transcription_queue))
 
                     # Proceed to image generation if 3 transcriptions are collected
                     if len(transcription_queue) == PACKAGE_SIZE:
                         await generate_image(websocket, transcription_queue)
+                        # Reset counter after image generation
+                        await update_counter(0)
                         transcription_queue.clear()
 
                 except Exception as e:

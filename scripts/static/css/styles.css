@@ -361,3 +361,10 @@ h2{
   letter-spacing: 150%;
 }
 
+.counter-text {
+    font-family: 'Roboto-Bold';
+    font-size: 14px;
+    color: rgb(26, 255, 100);
+    text-transform: uppercase;
+}
+
