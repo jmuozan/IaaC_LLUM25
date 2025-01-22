@@ -5,7 +5,7 @@ import numpy as np
 import time  # Import time module
 
 class AudioProcessor:
-    def __init__(self, rate=44100, channels=1, record_seconds=8, silent_threshold=0.01):
+    def __init__(self, rate=44100, channels=1, record_seconds=5, silent_threshold=0.01):
         self.rate = rate
         self.channels = channels
         self.record_seconds = record_seconds

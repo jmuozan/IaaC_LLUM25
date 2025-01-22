@@ -82,7 +82,6 @@ async def handle_osc_messages(websocket):
                 elif message == "pause":
                     print("[INFO] Pausing recording...")
                     is_recording = False
-                    await update_state("idle")
 
             if is_recording:
                 print("[INFO] Recording...")
@@ -99,6 +98,7 @@ async def handle_osc_messages(websocket):
                         continue
 
                     await update_state("transcribing")
+                    is_recording = False
 
                     # Transcribe audio
                     transcription = await asyncio.to_thread(transcribe_audio, audio_path)
@@ -171,10 +171,13 @@ async def generate_image(websocket, transcription_queue):
         requests.post(UPDATE_IMAGE_URL, json={"image_path": image_path})
         updated_sentences = finalize_sentences()
         requests.post(UPDATE_SENTENCES_URL, json=updated_sentences)
+        await update_state("image_uploading")
 
         # Upload the image and save to Supabase
         upload_image_and_save_to_db(local_image_path, prompt, current_question)
-        await update_state("image_saved")
+
+        await update_state("idle")
+        
 
 
         # Clear the processed sentences from the queue
