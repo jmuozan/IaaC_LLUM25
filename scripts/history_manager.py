@@ -42,7 +42,7 @@ def add_sentences_in_progress(new_sentences):
         with open(SENTENCES_FILE, "w", encoding="utf-8") as file:
             json.dump(sentences, file, indent=4)
 
-        print(f"[INFO] Added new 'in-progress' sentences: {new_sentences}")
+        # print(f"[INFO] Added new 'in-progress' sentences: {new_sentences}")
         return sentences
     except Exception as e:
         print(f"[ERROR] Failed to add new 'in-progress' sentences: {e}")
@@ -83,8 +83,8 @@ def finalize_sentences():
         with open(SENTENCES_FILE, "w", encoding="utf-8") as file:
             json.dump(updated_sentences, file, indent=4)
 
-        print("[INFO] Finalized sentences. Updated JSON:")
-        print(json.dumps(updated_sentences, indent=4))
+        # print("[INFO] Finalized sentences. Updated JSON:")
+        # print(json.dumps(updated_sentences, indent=4))
         return updated_sentences
     except Exception as e:
         print(f"[ERROR] Failed to finalize sentences: {e}")

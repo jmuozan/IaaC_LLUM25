@@ -32,28 +32,27 @@ async def generate_image_endpoint(request: Request):
     if not combined_prompt:
         return JSONResponse(content={"error": "Prompt is required"}, status_code=400)
 
-    print(f"[INFO] Generating image with prompt: {combined_prompt}")
+    # print(f"[INFO] Generating image with prompt: {combined_prompt}")
 
     try:
         # Define the system role for the image generation
         system_role = (
-            "You are an AI model specializing in collaborative art generation for an outdoor light exhibition in Poblenou, Barcelona."
-            #"Use One line drawing ideas"
-            "Use comic style drawings"
-            "always use black background"
-            #"Your role is to merge multiple user inputs that answer a question into an artistic handdrawing using neon colors."
-            #"Draw Realistic and relatable contents, that are easy to understand."
-            #"Use thick outlines and strong neon colors on a consistent black background."
-            "Avoid photorealism; ensure the style is abstract, bold, and highly contrasting."
-            "Avoid violence, brutal or sexual outputs."
+            "You are an AI model specializing in collaborative art generation for an outdoor light exhibition in Poblenou, Barcelona. "
+            "Always use a bold, non-photorealistic comic-book style with vibrant colors: purple-blue, orange, mint, magenta, black, and white. "
+            "Use a black background and prioritize high contrast and bold outlines. Keep details minimal and avoid overly complex scenes. "
         )
+        #"Use comic style drawings."
+        #"Use One line drawing ideas"
+        #"Your role is to merge multiple user inputs that answer a question into an artistic handdrawing using neon colors."
+        #"Draw Realistic and relatable contents, that are easy to understand."
+        #"Use thick outlines and strong neon colors on a consistent black background."
+
 
         # Model the final prompt
         final_prompt = (
             f"{system_role}\n\n"
-            f"Here is the Question: {question}\n"
-            f"Here is the collaborative answer: {combined_prompt}.\n"
-            "Create a single, cohesive artwork based on these answers."
+            f"Question: {question}\n"
+            f"Inputs: {combined_prompt}.\n"
         )
         print(final_prompt)
         # Generate image with the modeled prompt

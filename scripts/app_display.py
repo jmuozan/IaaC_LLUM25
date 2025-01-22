@@ -105,13 +105,13 @@ async def websocket_endpoint(websocket: WebSocket):
         sentences = load_sentences()
         await websocket.send_json({"event": "init_sentences", "data": sentences})
         await websocket.send_json({"event": "current_question", "data": current_question})
-        print("[DEBUG] Sent existing sentences to new client.")
+        # print("[DEBUG] Sent existing sentences to new client.")
 
         # Keep listening for messages (if needed in the future)
         while True:
             try:
                 data = await websocket.receive_json()
-                print("[DEBUG] WebSocket message received:", data)
+                # print("[DEBUG] WebSocket message received:", data)
 
                 event = data.get("event")
                 if event == "update_question":

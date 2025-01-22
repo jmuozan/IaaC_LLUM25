@@ -3,5 +3,16 @@ source env/bin/activate #MAC/LINUX
 .\env\Scripts\activate #Windows
 pip install -r requirements.txt
 
+1st Terminal
+cd scripts 
+python image_manager.py
+
+2nd Terminal
+cd scripts
+python app_display.py
+
+3rd Terminal
+python new_main.py
+
 
 

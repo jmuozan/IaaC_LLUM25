@@ -24,3 +24,4 @@ def generate_image(final_prompt):
         handler.write(img_data)
     return img_filename
 
+# size="1792x1024"  # Landscape format

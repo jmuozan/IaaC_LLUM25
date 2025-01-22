@@ -94,7 +94,7 @@ async def handle_osc_messages(websocket):
                     # Check if the audio is silent
                     if await asyncio.to_thread(audio_processor.is_silent, audio_path):
                         await update_state("idle")
-                        print("[WARNING] Silent audio detected. Retrying...")
+                        # print("[WARNING] Silent audio detected. Retrying...")
                         continue
 
                     await update_state("transcribing")
@@ -103,7 +103,7 @@ async def handle_osc_messages(websocket):
                     # Transcribe audio
                     transcription = await asyncio.to_thread(transcribe_audio, audio_path)
                     if not transcription.strip():
-                        print("[WARNING] Empty transcription. Retrying...")
+                        # print("[WARNING] Empty transcription. Retrying...")
                         await update_state("idle")
                         continue
 
@@ -113,7 +113,7 @@ async def handle_osc_messages(websocket):
                     updated_sentences = add_sentences_in_progress([transcription.strip()])
                     await update_state("idle")
                     requests.post(UPDATE_SENTENCES_URL, json=updated_sentences)
-                    print(f"[INFO] Collected {len(transcription_queue)} transcriptions.")
+                    # print(f"[INFO] Collected {len(transcription_queue)} transcriptions.")
 
                     # Proceed to image generation if 3 transcriptions are collected
                     if len(transcription_queue) == PACKAGE_SIZE:
@@ -138,7 +138,7 @@ async def fetch_current_question():
         response.raise_for_status()
         question_data = response.json()
         current_question = question_data.get("current_question", "How will living in cities look like in the future ?")
-        print(f"[INFO] Current question fetched: {current_question}")
+        # print(f"[INFO] Current question fetched: {current_question}")
         return current_question
     except requests.RequestException as e:
         print(f"[ERROR] Failed to fetch current question: {e}")
@@ -160,10 +160,10 @@ async def generate_image(websocket, transcription_queue):
         response = requests.post(IMAGE_GENERATION_URL, json={"prompt": prompt, "question": current_question})
         response.raise_for_status()
         image_path = response.json().get("image_path")
-        print(image_path)
+        # print(image_path)
         # Map web path to local file path
         local_image_path = os.path.join("scripts", image_path.lstrip("/"))  # Convert to local path
-        print(f"[INFO] Local image path: {local_image_path}")#
+        # print(f"[INFO] Local image path: {local_image_path}")#
         await update_state("image_generated")
 
          # Update sentences.json statuses
