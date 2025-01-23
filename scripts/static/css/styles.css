@@ -230,7 +230,7 @@ img {
 }
 
 .in-progress-box.processing{
-  border: 3px solid rgb(40, 40, 40);
+  border: 2px solid rgb(40, 40, 40);
   animation: pulse 1s infinite;
   margin-block-end: 10px;
   border-bottom: 2px solid blue;
@@ -248,8 +248,7 @@ img {
   flex-direction: row;
   justify-content: space-between;
   padding: 10px;
-  padding-bottom: 0px;
-  padding-top: 0px;
+  padding-bottom: 5px;
   align-items: center;
 }
 
@@ -270,7 +269,7 @@ img {
 }
 
 #done-box {
-  border: 2px solid rgb(85, 51, 255);
+  border: 2px solid rgb(73, 42, 255);
   gap: 10px;
   flex-direction: column;
 }
@@ -364,7 +363,7 @@ h2{
 .counter-text {
     font-family: 'Roboto-Bold';
     font-size: 14px;
-    color: rgb(26, 255, 100);
+    color: rgb(255, 94, 26);
     text-transform: uppercase;
 }
 
