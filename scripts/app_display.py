@@ -66,6 +66,15 @@ async def state_update(request: Request):
         return {"status": "success"}
     return {"error": "Invalid state"}, 400
 
+@app.post("/update-counter")
+async def update_counter(request: Request):
+    """Endpoint to update and broadcast the sentence counter."""
+    data = await request.json()
+    count = data.get("count")
+    if count is not None:
+        await notify_clients("update_counter", {"count": count})
+        return {"status": "success"}
+    return {"error": "Invalid count"}, 400
 
 @app.post("/update-image")
 async def update_image(request: Request):

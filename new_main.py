@@ -94,6 +94,7 @@ async def handle_osc_messages(websocket):
 
                 elif message == "pause":
                     print("[INFO] Pausing recording...")
+                    await update_state("idle")
                     is_recording = False
 
             if is_recording:
@@ -123,11 +124,10 @@ async def handle_osc_messages(websocket):
                     # Process valid transcription
                     transcription_queue.append(transcription.strip())
                     append_to_history([transcription.strip()])
-                    updated_sentences = add_sentences_in_progress([transcription.strip()])
                     await update_state("idle")
+                    updated_sentences = add_sentences_in_progress([transcription.strip()])
                     requests.post(UPDATE_SENTENCES_URL, json=updated_sentences)
                     # print(f"[INFO] Collected {len(transcription_queue)} transcriptions.")
-                    await update_state(f"box{len(transcription_queue)}")
 
                     # Update counter
                     await update_counter(len(transcription_queue))
