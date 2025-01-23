@@ -23,26 +23,19 @@ def append_to_history(transcriptions, history_file="history.txt", max_lines=6):
 
 def add_sentences_in_progress(new_sentences):
     """
-    Add new sentences to `sentences.json` with the status "in-progress".
+    Clear existing sentences and add new ones with "in-progress" status.
     Returns the updated list of sentences.
     """
     try:
-        # Load existing sentences
+        # Create new sentences list
         sentences = []
-        if os.path.exists(SENTENCES_FILE):
-            with open(SENTENCES_FILE, "r", encoding="utf-8") as file:
-                sentences = json.load(file)
-
-        # Add new sentences if not already present
         for sentence_text in new_sentences:
-            if not any(s["text"] == sentence_text for s in sentences):
-                sentences.append({"text": sentence_text, "status": "in-progress"})
+            sentences.append({"text": sentence_text, "status": "in-progress"})
 
-        # Save updated sentences
+        # Save new sentences (overwrites existing file)
         with open(SENTENCES_FILE, "w", encoding="utf-8") as file:
             json.dump(sentences, file, indent=4)
 
-        # print(f"[INFO] Added new 'in-progress' sentences: {new_sentences}")
         return sentences
     except Exception as e:
         print(f"[ERROR] Failed to add new 'in-progress' sentences: {e}")
@@ -50,12 +43,10 @@ def add_sentences_in_progress(new_sentences):
 
 def finalize_sentences():
     """
-    Mark the first three "in-progress" sentences as "done",
-    remove older "done" sentences, and keep the latest three.
+    Mark all current sentences as "done".
     Returns the updated list of sentences.
     """
     try:
-        # Load existing sentences
         if not os.path.exists(SENTENCES_FILE):
             print("[INFO] No existing sentences to finalize.")
             return []
@@ -63,29 +54,15 @@ def finalize_sentences():
         with open(SENTENCES_FILE, "r", encoding="utf-8") as file:
             sentences = json.load(file)
 
-        # Separate "in-progress" and "done"
-        in_progress = [s for s in sentences if s["status"] == "in-progress"]
-        done = [s for s in sentences if s["status"] == "done"]
-
-        # Mark the first three "in-progress" as "done"
-        for sentence in in_progress[:3]:
+        # Mark all sentences as done
+        for sentence in sentences:
             sentence["status"] = "done"
 
-        # Combine updated "done" sentences and trim older ones
-        done = done + in_progress[:3]
-        done = done[-3:]  # Keep only the newest three "done"
-
-        # Update "in-progress" sentences
-        in_progress = in_progress[3:]  # Remove the processed ones
-
         # Save the updated list
-        updated_sentences = in_progress + done
         with open(SENTENCES_FILE, "w", encoding="utf-8") as file:
-            json.dump(updated_sentences, file, indent=4)
+            json.dump(sentences, file, indent=4)
 
-        # print("[INFO] Finalized sentences. Updated JSON:")
-        # print(json.dumps(updated_sentences, indent=4))
-        return updated_sentences
+        return sentences
     except Exception as e:
         print(f"[ERROR] Failed to finalize sentences: {e}")
         return []
