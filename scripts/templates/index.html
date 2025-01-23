@@ -23,12 +23,13 @@
                 </div> 
              </div>
              <div id="status-container" class="status-container">
-                <div id="visuals-container">
+                <div id="visuals-container" class="visuals-container">
                     <div class="status-box" id="idle-box">
                         <div class="status-icon">
                             <img src="/static/Icons/idle.png" alt="microphone" style= "width:96px; height:96px;"></img>
                         </div>
                         <div class="status-text">say something</div>
+                        <div class="counter-text" id="input-counter">0/3</div>
                     </div>
                     <div class="status-box" id="recording-box">
                         <div class="status-icon">
@@ -42,6 +43,12 @@
                             <img src="/static/Icons/write.gif"alt="writing gif" style= "width:96px; height:96px;"></img>
                         </div>
                         <div class="status-text">transcribing</div>
+                    </div>  
+                    <div class="status-box" id="scilent-box">
+                        <div class="status-icon">
+                            <img src="/static/Icons/scilent.gif"alt="scilent_gif" style= "width:96px; height:96px;"></img>
+                        </div>
+                        <div class="status-text">try again</div>
                     </div>  
                     <div class="status-box" id="loading-box">
                         <div class="status-icon">
@@ -60,7 +67,6 @@
                     <div id="in-progress-box" class="in-progress-box">
                         <div id="in-progress-list"></div>
                         <div class="processing-header" id="processing-header">
-                            <div class="counter-text" id="input-counter">0/3</div>
                             <div class="status-text" id="processing-text">collecting inputs</div>
                         </div>
                     </div>
@@ -159,18 +165,17 @@
             const newQuestionEnglish = questionsEnglish[currentQuestionIndexEnglish];
             const newQuestionSpanish = questionsSpanish[currentQuestionIndexSpanish];
 
+            // Update both questions with typewriter effect
             updateQuestionWithTypewriterEnglish(newQuestionEnglish);
             updateQuestionWithTypewriterSpanish(newQuestionSpanish);
 
-            // Send the updated question to the server
-            ws.send(
-                JSON.stringify({
-                    event: "update_question",
-                    english: newQuestionEnglish,
-                    spanish: newQuestionSpanish
-                })
-            );
+            // Send question update to server
+            ws.send(JSON.stringify({
+                event: "update_question",
+                question: newQuestionEnglish
+            }));
         }
+
         // Generic typewriter function for both languages
         function updateQuestionWithTypewriter(elementId, newQuestion) {
             console.log(`Updating ${elementId} with: ${newQuestion}`);
@@ -243,16 +248,27 @@
             }, 500); // Match the transition duration
         }
 
-        function updateImageWithDissolve(newImagePath) {
+        function updateImageWithDissolve(imagePath) {
+            console.log("[DEBUG] Updating image with path:", imagePath);
             const imageElement = document.getElementById("image");
-
             fadeOut(imageElement);
 
             setTimeout(() => {
-                imageElement.src = `${newImagePath}?t=${new Date().getTime()}`;
+                // If it's a direct URL from OpenAI, use it as is
+                const finalPath = imagePath.startsWith('http') ? imagePath : `${imagePath}?t=${new Date().getTime()}`;
+                console.log("[DEBUG] Final image path:", finalPath);
+                imageElement.src = finalPath;
+                
+                // Add error handling
+                imageElement.onerror = () => {
+                    console.error("[ERROR] Failed to load image:", finalPath);
+                    imageElement.src = DEFAULT_GIF;  // Fallback to default
+                };
+                
                 fadeIn(imageElement);
-            }, 500); // Match fade-out duration
+            }, 500);
         }
+        
         function updateTranscriptions(sentences) {
             // console.log("Updating transcriptions:", sentences);
     
@@ -294,26 +310,34 @@
         // Helper function to update state display
         function updateStateDisplay(state) {
             console.log("Updating state to:", state);
-            // Status boxes
             const stateBoxes = {
                 idle: document.getElementById("idle-box"),
                 recording: document.getElementById("recording-box"),
                 transcribing: document.getElementById("transcribing-box"),
                 image_processing: document.getElementById("loading-box"),
                 image_uploading: document.getElementById("upload-box"),
-                box1: document.getElementById("first-box"),
-                box2: document.getElementById("second-box"),
-                box3: document.getElementById("third-box")
+                scilent: document.getElementById("scilent-box")
             };
 
-            // Hide all state boxes first
+            // Remove active class from all boxes
             Object.values(stateBoxes).forEach(box => {
-                if (box) box.style.display = "none";
+                if (box) {
+                    box.classList.remove('active');
+                    // Use setTimeout to ensure proper transition
+                    setTimeout(() => {
+                        if (!box.classList.contains('active')) {
+                            box.style.display = 'none';
+                        }
+                    }, 300);
+                }
             });
 
-            // Show only the current state box
+            // Add active class to current state box
             if (stateBoxes[state]) {
-                stateBoxes[state].style.display = "block";
+                stateBoxes[state].style.display = 'flex';
+                // Force reflow
+                void stateBoxes[state].offsetWidth;
+                stateBoxes[state].classList.add('active');
             }
         }
 
@@ -344,18 +368,20 @@
                     if (message.data) updateTranscriptions(message.data);
                     break;
                 case "current_question":
-                    if (message.data) {
-                        questionElementEnglish.textContent = message.data.question;
-                    } else {
-                        ws.send(JSON.stringify({
-                            event: "current_question",
-                            data: getCurrentQuestionEnglish()
-                        }));
+                    if (message.data?.question) {
+                        const question = message.data.question;
+                        const englishIndex = questionsEnglish.indexOf(question);
+                        if (englishIndex !== -1) {
+                            currentQuestionIndexEnglish = englishIndex;
+                            currentQuestionIndexSpanish = englishIndex;
+                        }
                     }
                     break;
+                    
             }
         }
 
+        // Update when connecting
         function connectWebSocket() {
             if (ws) ws.close();
 
@@ -363,7 +389,10 @@
 
             ws.onopen = () => {
                 console.log("WebSocket connection established.");
-                if (loadingIndicator) loadingIndicator.style.display = "none";
+                // Request current question on connection
+                ws.send(JSON.stringify({
+                    event: "get_current_question"
+                }));
             };
 
             ws.onmessage = (event) => {

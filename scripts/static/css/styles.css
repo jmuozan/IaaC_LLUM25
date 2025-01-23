@@ -14,6 +14,11 @@
   src: url("/static/Fonts/Roboto-Black.woff");
 }
 
+@font-face {
+  font-family: Roboto-Mono;
+  src: url("/static/Fonts/RobotoMono-Bold.woff");
+}
+
 /* Fade-in and fade-out for transcriptions */
 @keyframes fadeIn {
   from {
@@ -141,8 +146,8 @@ body {
 
 img {
   max-height: 100%;
-  height: auto;
-  width: 100%; /* Maintain aspect ratio */
+  height: 512;
+  width: 720px; /* Maintain aspect ratio */
   border: none;
   border-radius: none;
   object-fit: cover;
@@ -190,8 +195,10 @@ img {
     width:100%;
     overflow: hidden;
     display: flex;
+    height: 100%;
     flex-direction: column;
     gap: 10px;
+    justify-content: center;
 }
 
 #transcription-list {
@@ -224,7 +231,6 @@ img {
 
 .in-progress-box{
   margin-block-end: 10px;
-  border: 3px solid rgb(40,40,40);
   gap: 10px;  
   flex-direction: column;
 }
@@ -238,7 +244,6 @@ img {
 }
 
 .processing-header{
-  background-color: rgb(40, 40, 40);
   color: rgb(255, 255, 255);
   font-size: 16px;
   font-weight: bold;
@@ -246,10 +251,10 @@ img {
   padding-top: 5px;
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 10px;
   padding-bottom: 5px;
-  align-items: center;
+  align-items: flex-end;
 }
 
 .generated-header{
@@ -269,7 +274,7 @@ img {
 }
 
 #done-box {
-  border: 2px solid rgb(73, 42, 255);
+  border: 2px solid rgb(85, 51, 255);
   gap: 10px;
   flex-direction: column;
 }
@@ -296,7 +301,7 @@ li.done {
 }
 
 .prompt-frame.complete {
-  border: 2px solid mediumspringgreen;
+  border: 2px solid rgb(26, 255, 100);
   animation: none;
   column-gap: 10px;
 }
@@ -315,7 +320,7 @@ h2{
   display: flex;
   flex-direction: column;
   flex: auto;
-  padding: 96px;
+  align-items: center;
 }
 
 .status-container{
@@ -323,20 +328,27 @@ h2{
   flex-direction: row;
   flex: 1;
   width: 100%;
+  height: 100%
 }
 
 .status-box {
   color: #ffffff;
   background-color: #000000;
   padding: 96px;
-  display: flex;
-  flex: content;
+  padding-top: 128px;
+  display: none;
   flex-direction: column;
   margin-block-end: 10px;
-  gap: 20px;
-  justify-content: space-between;
+  gap: 32px;
   justify-content: center;
   align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.status-box.active {
+  display: flex;
+  opacity: 1;
 }
 
 .status-icon {
@@ -360,9 +372,9 @@ h2{
 }
 
 .counter-text {
-    font-family: 'Roboto-Bold';
-    font-size: 14px;
-    color: rgb(253, 112, 51);
+    font-family: 'Roboto-Mono';
+    font-size: 32px;
+    color: rgb(26, 255, 100);
     text-transform: uppercase;
 }
 

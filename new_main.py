@@ -94,8 +94,9 @@ async def handle_osc_messages(websocket):
 
                 elif message == "pause":
                     print("[INFO] Pausing recording...")
-                    await update_state("idle")
+                    # await update_state("idle")
                     is_recording = False
+                    send_osc_message("/state", "ready")
 
             if is_recording:
                 print("[INFO] Recording...")
@@ -107,11 +108,13 @@ async def handle_osc_messages(websocket):
 
                     # Check if the audio is silent
                     if await asyncio.to_thread(audio_processor.is_silent, audio_path):
-                        await update_state("idle")
+                        await update_state("scilent")
+                        send_osc_message("/state", "ready")
                         # print("[WARNING] Silent audio detected. Retrying...")
                         continue
 
                     await update_state("transcribing")
+                    send_osc_message("/state", "transcribing")
                     is_recording = False
 
                     # Transcribe audio
@@ -131,6 +134,7 @@ async def handle_osc_messages(websocket):
 
                     # Update counter
                     await update_counter(len(transcription_queue))
+                    send_osc_message("/state", "ready")
 
                     # Proceed to image generation if 3 transcriptions are collected
                     if len(transcription_queue) == PACKAGE_SIZE:
@@ -164,49 +168,58 @@ async def fetch_current_question():
         return "How will living in cities look like in the future ?"
     
 # Image generation process
+from scripts.osc_receiver import send_osc_message
+
 async def generate_image(websocket, transcription_queue):
-    """Generate an image using the top 3 sentences."""
     try:
-        # Prepare the prompt from the first PACKAGE_SIZE sentences
         package = list(transcription_queue)
         prompt = " ".join(package)
-
         current_question = await fetch_current_question()
-        print(f"[DEBUG] Question used in Supabase upload: {current_question}")
+        
         await update_state("image_processing")
+        send_osc_message("/state", "generating")
 
-        # Generate the image
+        # Generate and save the image
         response = requests.post(IMAGE_GENERATION_URL, json={"prompt": prompt, "question": current_question})
         response.raise_for_status()
-        image_path = response.json().get("image_path")
-        # print(image_path)
-        # Map web path to local file path
-        local_image_path = os.path.join("scripts", image_path.lstrip("/"))  # Convert to local path
-        # print(f"[INFO] Local image path: {local_image_path}")#
+        
+        result = response.json()
+        direct_url = result.get("direct_url")
+        local_path = result.get("image_path")  # This is now the full normalized path
+        
+        # Update UI with the OpenAI URL
+        requests.post(UPDATE_IMAGE_URL, json={"image_path": direct_url})
         await update_state("image_generated")
-
-         # Update sentences.json statuses
-        update_sentence_status(package, "done")  # Mark the package as "done"
-        requests.post(UPDATE_IMAGE_URL, json={"image_path": image_path})
+        
+        # Ensure file exists before proceeding
+        if not os.path.exists(local_path):
+            raise FileNotFoundError(f"Generated image not found at {local_path}")
+            
+        print(f"[DEBUG] Verified file exists at: {local_path}")
+        
+        # Update sentences
+        update_sentence_status(package, "done")
         updated_sentences = finalize_sentences()
         requests.post(UPDATE_SENTENCES_URL, json=updated_sentences)
-        await update_state("image_uploading")
-
-        # Upload the image and save to Supabase
-        upload_image_and_save_to_db(local_image_path, prompt, current_question)
-
-        await update_state("idle")
         
-
-
-        # Clear the processed sentences from the queue
+        # Upload to Supabase using the local saved file
+        await update_state("image_uploading")
+        print(f"[DEBUG] Uploading file from path: {local_path}")
+        
+        # Add small delay to ensure file is completely written
+        await asyncio.sleep(0.5)
+        
+        # Convert path to use forward slashes for consistency
+        upload_path = local_path.replace('\\', '/')
+        upload_image_and_save_to_db(upload_path, prompt, current_question)
+        
+        await update_state("idle")
+        send_osc_message("/state", "ready")
         transcription_queue.clear()
 
-    except asyncio.CancelledError:
-        print("[INFO] Image generation task canceled.")
-        return
     except Exception as e:
         print(f"[ERROR] Image generation failed: {e}")
+        send_osc_message("/state", "error")
 
 async def main():
     """Main function to coordinate OSC, audio, and WebSocket communication."""

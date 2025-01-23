@@ -20,7 +20,7 @@ SENTENCES_FILE = os.path.join(BASE_DIR, "sentences.json")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 # Global variable to store the current question
-current_question = "Default question"
+current_question = "How will living in cities look like in the future?"
 # WebSocket clients
 clients = set()  # Set to keep track of WebSocket connections
 # Helper Functions
@@ -87,17 +87,18 @@ async def get_current_question():
     """Endpoint to fetch the current question."""
     global current_question
     print(f"[DEBUG] Returning current_question: {current_question}")
-    return {"current_question": current_question}
+    return {"current_question": current_question, "success": True}
     
 @app.post("/update-question")
 async def update_question(request: Request):
     """Endpoint to update the current question."""
     global current_question
     data = await request.json()
-    print(f"[DEBUG] Received data for update-question: {data}")
-    current_question = data.get("question", "How will living in cities look like in the future ?")
-    print(f"[DEBUG] Updated current_question to: {current_question}")
-    await notify_clients("current_question", {"question": current_question})
+    new_question = data.get("question")
+    if new_question:
+        current_question = new_question
+        print(f"[INFO] Updated current question to: {current_question}")
+        await notify_clients("current_question", {"question": current_question})
     return {"status": "success", "current_question": current_question}
 
 
@@ -106,44 +107,34 @@ async def update_question(request: Request):
 async def websocket_endpoint(websocket: WebSocket):
     global current_question
     await websocket.accept()
-    clients.add(websocket)  # Add the client to the set
-    print(f"[INFO] WebSocket connection opened. Total clients: {len(clients)}")
-
+    clients.add(websocket)
+    
     try:
-        # Send existing sentences on connection
+        # Send current state
+        await websocket.send_json({
+            "event": "current_question",
+            "data": {"question": current_question}
+        })
+        
+        # Send existing sentences
         sentences = load_sentences()
         await websocket.send_json({"event": "init_sentences", "data": sentences})
-        await websocket.send_json({"event": "current_question", "data": current_question})
-        # print("[DEBUG] Sent existing sentences to new client.")
 
-        # Keep listening for messages (if needed in the future)
         while True:
             try:
                 data = await websocket.receive_json()
-                # print("[DEBUG] WebSocket message received:", data)
-
-                event = data.get("event")
-                if event == "update_question":
-                    new_question = data.get("data")
-                    if new_question:
+                if data.get("event") == "update_question":
+                    new_question = data.get("question")
+                    if new_question and new_question != current_question:
                         current_question = new_question
-                        print(f"[INFO] Updated current question: {current_question}")
-                        await notify_clients("current_question", {"data": current_question})
-                elif event == "get_current_question":
-                    await websocket.send_json({"event": "current_question", "data": current_question})
-            
-            except asyncio.CancelledError:
-                print("[INFO] WebSocket operation cancelled.")
-                break
+                        await notify_clients("current_question", {"question": current_question})
 
             except Exception as e:
                 print(f"[ERROR] Failed to process WebSocket message: {e}")
                 break
-    except Exception as e:
-        print(f"[ERROR] WebSocket error: {e}")
+
     finally:
-        clients.remove(websocket)  # Remove the client on disconnect
-        print(f"[INFO] WebSocket connection closed. Total clients: {len(clients)}")
+        clients.remove(websocket)
 
 async def notify_clients(event, data):
     message = {"event": event, "data": data}
