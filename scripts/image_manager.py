@@ -11,13 +11,22 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from scripts.image_generator import generate_image
-
+UPDATE_STATE_URL = "http://127.0.0.1:8001/state-update"
 app = FastAPI()
 
 # Paths
 IMAGE_UPDATE_URL = "http://127.0.0.1:8001/update-image"
 WEB_UPDATE_IMAGE_URL = "http://127.0.0.1:8001/update-image"
+UPDATE_SENTENCES_URL = "http://127.0.0.1:8001/update-sentences"
 
+async def update_state(state):
+    """Send state update to the interface."""
+    try:
+        response = requests.post(UPDATE_STATE_URL, json={"state": state})
+        response.raise_for_status()
+        print(f"[INFO] State updated to: {state}")
+    except requests.RequestException as e:
+        print(f"[ERROR] Failed to update state: {e}")
 
 @app.post("/generate-image")
 async def generate_image_endpoint(request: Request):
@@ -35,8 +44,9 @@ async def generate_image_endpoint(request: Request):
         # Define the system role for the image generation
         system_role = (
             "You are an AI model specializing in collaborative art generation for an outdoor light exhibition in Poblenou, Barcelona. "
-            "Always use a bold, non-photorealistic architecture sketch style with vibrant colors: purple-blue, orange, mint, magenta, black, and white. "
-            "Use a black background and high contrast. Keep details minimal and avoid overly complex scenes. "
+            "Always use a realistic cinematic architecture style with colors and focus on explaining details related to the inputs. "
+            "Use high contrast and avoid complex scenes. "
+            "Avoid sexual, brutal or harmfull contents. replace it with something beatiful instead "
         )
 
         # Model the final prompt
@@ -65,6 +75,14 @@ async def generate_image_endpoint(request: Request):
         
     except Exception as e:
         print(f"[ERROR] Generation failed: {e}")
+        await update_state("image_generation_failed")
+        
+        # Clear the sentences on failure
+        try:
+            requests.post(UPDATE_SENTENCES_URL, json=[])
+        except Exception as clear_err:
+            print(f"[ERROR] Failed to clear sentences: {clear_err}")
+            
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 

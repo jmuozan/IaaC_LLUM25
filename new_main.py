@@ -90,27 +90,35 @@ async def handle_osc_messages(websocket):
                 if message == "record":
                     is_recording = True
                     print("[INFO] Recording triggered...")
-                    # Notify the interface about the recording state
+                    await update_state("recording")
+                    send_osc_message("/state", "recording")
 
                 elif message == "pause":
                     print("[INFO] Pausing recording...")
-                    # await update_state("idle")
-                    is_recording = False
+                    await update_state("idle")
                     send_osc_message("/state", "ready")
+                    is_recording = False
+
+                elif message == "recordagain":
+                    is_recording = True
+                    print("[INFO] Recording again triggered...")
+                    await update_state("scilent")
+                    send_osc_message("/state", "recording")
 
             if is_recording:
                 print("[INFO] Recording...")
                 # Keep recording until 3 sentences are transcribed
                 try:
-                    await update_state("recording")
+                    send_osc_message("/state", "recording")
                     # Record audio
                     audio_path = await asyncio.to_thread(audio_processor.record_and_save, AUDIO_DIR)
 
                     # Check if the audio is silent
                     if await asyncio.to_thread(audio_processor.is_silent, audio_path):
-                        await update_state("scilent")
-                        send_osc_message("/state", "ready")
-                        # print("[WARNING] Silent audio detected. Retrying...")
+                        await update_state("silent")
+                        send_osc_message("/state", "recording")
+                        is_recording = True
+                        print("[WARNING] Silent audio detected. Retrying...")
                         continue
 
                     await update_state("transcribing")
@@ -120,17 +128,20 @@ async def handle_osc_messages(websocket):
                     # Transcribe audio
                     transcription = await asyncio.to_thread(transcribe_audio, audio_path)
                     if not transcription.strip():
-                        # print("[WARNING] Empty transcription. Retrying...")
+                        print("[WARNING] Empty transcription. Retrying...")
                         await update_state("idle")
+                        send_osc_message("/state", "ready")
                         continue
 
                     # Process valid transcription
                     transcription_queue.append(transcription.strip())
                     append_to_history([transcription.strip()])
                     await update_state("idle")
+                    send_osc_message("/state", "ready")
+                    is_recording = False
                     updated_sentences = add_sentences_in_progress([transcription.strip()])
                     requests.post(UPDATE_SENTENCES_URL, json=updated_sentences)
-                    # print(f"[INFO] Collected {len(transcription_queue)} transcriptions.")
+                    print(f"[INFO] Collected {len(transcription_queue)} transcriptions.")
 
                     # Update counter
                     await update_counter(len(transcription_queue))
@@ -138,14 +149,20 @@ async def handle_osc_messages(websocket):
 
                     # Proceed to image generation if 3 transcriptions are collected
                     if len(transcription_queue) == PACKAGE_SIZE:
-                        await generate_image(websocket, transcription_queue)
-                        # Reset counter after image generation
+                        success = await generate_image(websocket, transcription_queue)
+                        if not success:
+                            # Image generation failed, continue recording
+                            await update_state("imagefailed")
+                            continue
+                        send_osc_message("/state", "ready")
+                        # Reset counter only on success
                         await update_counter(0)
                         transcription_queue.clear()
 
                 except Exception as e:
                     print(f"[ERROR] Error during recording or transcription: {e}")
                     continue  # Retry recording in case of failure
+                    
 
             # After completing a loop, re-check OSC message status
             await asyncio.sleep(1)  # Short pause to avoid busy waiting
@@ -190,6 +207,7 @@ async def generate_image(websocket, transcription_queue):
         # Update UI with the OpenAI URL
         requests.post(UPDATE_IMAGE_URL, json={"image_path": direct_url})
         await update_state("image_generated")
+        send_osc_message("/state", "image_generated")
         
         # Ensure file exists before proceeding
         if not os.path.exists(local_path):
@@ -204,6 +222,7 @@ async def generate_image(websocket, transcription_queue):
         
         # Upload to Supabase using the local saved file
         await update_state("image_uploading")
+        send_osc_message("/state", "uploading")
         print(f"[DEBUG] Uploading file from path: {local_path}")
         
         # Add small delay to ensure file is completely written
@@ -219,7 +238,32 @@ async def generate_image(websocket, transcription_queue):
 
     except Exception as e:
         print(f"[ERROR] Image generation failed: {e}")
-        send_osc_message("/state", "error")
+        # Show error state
+        await update_state("image_generation_failed")
+        send_osc_message("/state", "image_generation_failed")
+        await asyncio.sleep(2)  # Show error state briefly
+        
+        # Clear everything
+        transcription_queue.clear()
+        await update_counter(0)
+        
+        # Clear sentences display
+        requests.post(UPDATE_SENTENCES_URL, json=[])  # Send empty list to clear sentences
+        
+        # Return to ready state
+        await update_state("idle")
+        send_osc_message("/state", "ready")
+        await asyncio.sleep(0.5)  # Brief pause before starting new round
+        
+        # Start new recording round
+        await update_state("recording")
+        send_osc_message("/state", "recording")
+        is_recording = True
+        
+        print("[INFO] Reset system and starting new recording round")
+        return False
+
+    return True
 
 async def main():
     """Main function to coordinate OSC, audio, and WebSocket communication."""
