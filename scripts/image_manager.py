@@ -11,8 +11,13 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from scripts.image_generator import generate_image
+from scripts.prompt_modifier import PromptModifier
+
 UPDATE_STATE_URL = "http://127.0.0.1:8001/state-update"
 app = FastAPI()
+
+# Initialize at top level
+prompt_modifier = PromptModifier()
 
 # Paths
 IMAGE_UPDATE_URL = "http://127.0.0.1:8001/update-image"
@@ -41,23 +46,12 @@ async def generate_image_endpoint(request: Request):
         if not combined_prompt:
             return JSONResponse(content={"error": "Prompt is required"}, status_code=400)
 
-        # Define the system role for the image generation
-        system_role = (
-            "You are an AI model specializing in collaborative art generation for an outdoor light exhibition in Poblenou, Barcelona. "
-            "Always use a realistic cinematic architecture style with colors and focus on explaining details related to the inputs. "
-            "Use high contrast and avoid complex scenes. "
-            "Avoid sexual, brutal or harmfull contents. replace it with something beatiful instead "
-        )
-
-        # Model the final prompt
-        final_prompt = (
-            f"{system_role}\n\n"
-            f"Question: {question}\n"
-            f"Inputs: {combined_prompt}.\n"
-        )
-        print(final_prompt)
-        # Generate image with the modeled prompt
-        result = generate_image(final_prompt)
+        # Get DALL-E optimized prompt
+        enhanced_prompt = prompt_modifier.enhance_prompt(question, combined_prompt)
+        print(f"[DEBUG] Using DALL-E prompt: {enhanced_prompt}")
+        
+        # Generate image directly with enhanced prompt
+        result = generate_image(enhanced_prompt)
         print(f"[DEBUG] Generated image at: {result['filename']}")
         
         # Ensure URL has https:// prefix
