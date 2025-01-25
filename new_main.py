@@ -9,6 +9,7 @@ import requests
 import websockets
 import json
 import os
+from scripts.text_sensor import AITextSensor  # Update import
 
 # Constants
 AUDIO_DIR = "scripts/static/audio"
@@ -79,7 +80,7 @@ async def handle_osc_messages(websocket):
     """Handle OSC messages, manage recording, and process transcription."""
     global is_recording
     audio_processor = AudioProcessor()
-    # Transcription processing
+    text_sensor = AITextSensor()  # Update to AI-powered sensor
 
     while not shutdown_flag:
         try:
@@ -133,13 +134,15 @@ async def handle_osc_messages(websocket):
                         send_osc_message("/state", "ready")
                         continue
 
-                    # Process valid transcription
-                    transcription_queue.append(transcription.strip())
-                    append_to_history([transcription.strip()])
+                    # Apply text censoring
+                    censored_transcription = text_sensor.censor_text(transcription.strip())
+                    transcription_queue.append(censored_transcription)
+                    append_to_history([censored_transcription])
+                    
                     await update_state("idle")
                     send_osc_message("/state", "ready")
                     is_recording = False
-                    updated_sentences = add_sentences_in_progress([transcription.strip()])
+                    updated_sentences = add_sentences_in_progress([censored_transcription])
                     requests.post(UPDATE_SENTENCES_URL, json=updated_sentences)
                     print(f"[INFO] Collected {len(transcription_queue)} transcriptions.")
 
