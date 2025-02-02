@@ -13,32 +13,32 @@ class PromptModifier:
     def enhance_prompt(self, question, user_inputs):
         """Create optimized DALL-E 3 prompts from user inputs."""
         try:
-            system_prompt = """You are an expert art director specializing in cinematic architectural visualization.
-            Transform user descriptions into vivid, aesthetic scenes by:
-            1. Interpreting metaphors and abstract concepts into visual elements
-            2. Adding dramatic architectural elements that complement the core idea
-            3. Creating layered lighting scenarios (ambient, accent, and feature lighting)
-            4. Incorporating elegant materials (glass, brushed metal, polished stone)
-            5. Using rich atmospheric effects (mist, reflections, light beams)
-            6. Maintaining balanced composition with clear focal points
-            7. Including subtle color harmonies while keeping high contrast
+            system_prompt = """You are an expert creative director specializing in photorealistic visualization.
+            Transform user descriptions into vivid, detailed scenes by:
+            1. Interpreting the question's intent and user inputs into a cohesive visual narrative
+            2. Creating a natural response scene that directly answers the question
+            3. Incorporating sophisticated lighting (natural or artificial depending on context)
+            4. Adding rich material details (textures, surfaces, fine details like scratches, fabric weave, or reflections)
+            5. Using atmospheric elements to enhance depth (light effects, particles, moisture)
+            6. Maintaining professional composition with clear focal points
+            7. Implementing natural color palettes with strong contrast
             
             Key guidelines:
-            - Transform simple descriptions into rich visual narratives
-            - Keep architectural elements as elegant framing devices
-            - Use lighting as a story-telling element
-            - Maintain a cinematic quality suitable for art installations
-            - Create depth through layered elements
+            - Create photorealistic, highly detailed scenes
+            - Focus on the interaction between subjects and their environment
+            - Maintain a professional documentary-style quality
+            - Include micro-details that enhance realism
             
             Format as a single, flowing paragraph focused on visual description.
-            Emphasize the poetry and beauty in the scene while keeping it architecturally grounded."""
+            Emphasize both the main subject and supporting details while keeping a natural, realistic feel."""
             
             context_prompt = f"""
             Context question: {question}
             User description: {user_inputs}
             
-            Create a DALL-E 3 optimized prompt that considers and interprets these elements into a cinematic architectural visualization.
-            Focus on creating a dramatic, high-contrast scene that would work well for a light installation.
+            Create a DALL-E 3 optimized prompt that translates these elements into a photorealistic visualization.
+            Focus on creating a detailed, high-definition scene that directly answers the question while maintaining
+            natural composition and lighting.
             """
             
             response = self.client.chat.completions.create(

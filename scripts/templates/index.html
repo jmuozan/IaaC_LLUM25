@@ -44,7 +44,7 @@
                         </div>
                         <div class="status-text">transcribing</div>
                     </div>  
-                    <div class="status-box" id="scilent-box">
+                    <div class="status-box" id="silent-box">
                         <div class="status-icon">
                             <img src="/static/Icons/scilent.gif"alt="scilent_gif" style= "width:96px; height:96px;"></img>
                         </div>
@@ -52,9 +52,15 @@
                     </div>  
                     <div class="status-box" id="loading-box">
                         <div class="status-icon">
-                            <img src="/static/Icons/loading.gif"alt="loading gif" style= "width:96px; height:96px;"></img>
+                            <img src="/static/Icons/loading2.gif"alt="loading gif" style= "width:96px; height:96px;"></img>
                         </div>
                         <div class="status-text">gernerating image</div>
+                    </div>
+                    <div class="status-box" id="error-box">
+                        <div class="status-icon">
+                            <img src="/static/Icons/image_failed.gif"alt="loading gif" style= "width:96px; height:96px;"></img>
+                        </div>
+                        <div class="status-text">image generation failed</div>
                     </div>  
                     <div class="status-box" id="upload-box">
                         <div class="status-icon">
@@ -74,7 +80,7 @@
                         <div id="done-list"></div>
                         <div class="generated-header">
                             <div class="done-icon" id="done-icon">
-                                <img src="/static/Icons/check.gif" alt="check gif" id="done-icon" style= "width:24px; height:24px;"></img>
+                                <img src="/static/Icons/check2.gif" alt="check gif" id="done-icon" style= "width:24px; height:24px;"></img>
                             </div>
                             <div class="status-text" id="done-text">image generated</div>
                         </div>
@@ -113,36 +119,46 @@
             "How will living in cities look like in the future?", 
             "What will transportation look like in the future?",
             "How will AI impact daily life in urban areas?",
-            "How will streets change in the future?",
+            "How will the streets of the future be like?",
             "What does the future smell like?",
-            "What challenges do you see in the future?",
-            "How can technology bridge gaps in city accessibility?",
-            "How do you imagine the Urban Jungle?",
+            "If you were the mayor of the future, what problems would you solve in your city?",
             "How will people travel in the future?",
-            "How do you imagine public spaces in the future?",
-            "How will Barcelona Streets look like in the future?",
-            "How will children live like in the future?",
             "What will we eat in the future?",
-            "How will animals live like in future cities?",
-            "What will we see in the museum in the future?"
+            "If you could design a museum of the future, what would you put in it?",
+            "What do you think the buildings in future cities will look like?",
+            "What will parks look like in the future?",
+            "How will the schools of the future be like?",
+            "What kind of art will we see in public spaces in the future?",
+            "How will houses look like in 50 years?",
+            "How will people connect and socialize in future cities?",
+            "If you could design a hospital of the future, what special things would it have?",
+            "What will cities sound like in the future?",
+            "How will future cities handle waste and recycling?",
+            "What new jobs will emerge in the future?",
+            "How will fashion be in the future?"
         ];
 
         const questionsSpanish = [
-            "¿Cómo será vivir en las ciudades en el futuro?",
-            "¿Cómo será el transporte en el futuro?",
-            "¿Cómo impactará la IA en la vida urbana?",
-            "¿Cómo cambiarán las calles en el futuro?",
-            "¿A qué huele el futuro?",
-            "¿Qué desafíos ves en el futuro?",
-            "¿Cómo puede la tecnología mejorar la accesibilidad urbana?",
-            "¿Cómo imaginas la Jungla Urbana?",
-            "¿Cómo viajarán las personas en el futuro?",
-            "¿Cómo imaginas los espacios públicos en el futuro?",
-            "¿Cómo serán las calles de Barcelona en el futuro?",
-            "¿Cómo vivirán los niños en el futuro?",
-            "¿Qué comeremos en el futuro?",
-            "¿Cómo vivirán los animales en las ciudades futuras?",
-            "¿Qué veremos en el museo en el futuro?"
+            "Com serà viure a les ciutats en el futur?", 
+            "Com serà el transport en el futur?",
+            "Com impactarà la IA en la vida de la ciutat?",
+            "Com seran els carrers del futur?",
+            "De què farà olor el futur?",
+            "Si fossis l’alcalde del futur, quins problemes solucionaries a la teva ciutat?",
+            "Com viatjaran les persones en el futur?",
+            "Què menjarem en el futur?",
+            "Si poguessis dissenyar un museu del futur, què hi posaries?",
+            "Com creus que seran els edificis de les ciutats del futur?",
+            "Com seran els parcs del futur?",
+            "Com seran les escoles del futur?",
+            "Quin tipus d'art veurem en els espais públics en el futur?",
+            "Com seran les cases d'aquí a cinquanta anys?",
+            "Com connectarà i socialitzarà la gent a les ciutats futures?",
+            "Si poguessis dissenyar un hospital del futur, quines coses especials tindria?",
+            "Com sonaran les ciutats en el futur?",
+            "Com gestionaran les futures ciutats els residus i el reciclatge?",
+            "Quines feines noves sorgiran en el futur?",
+            "Com serà la moda en el futur?"
         ];
 
         let currentQuestionIndexEnglish = 0;
@@ -316,7 +332,8 @@
                 transcribing: document.getElementById("transcribing-box"),
                 image_processing: document.getElementById("loading-box"),
                 image_uploading: document.getElementById("upload-box"),
-                scilent: document.getElementById("scilent-box")
+                silent: document.getElementById("silent-box"),
+                imagefailed: document.getElementById("error-box")
             };
 
             // Remove active class from all boxes
