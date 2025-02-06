@@ -117,8 +117,10 @@ async def handle_osc_messages(websocket):
                     # Check if the audio is silent
                     if await asyncio.to_thread(audio_processor.is_silent, audio_path):
                         await update_state("silent")
-                        send_osc_message("/state", "recording")
-                        is_recording = True
+                        # send_osc_message("/state", "recording")
+                        # is_recording = True
+                        send_osc_message("/state", "ready")
+                        is_recording = False
                         print("[WARNING] Silent audio detected. Retrying...")
                         continue
 

@@ -6,7 +6,7 @@ import asyncio
 osc_client = None
 osc_queue = None
 
-def setup_osc_client(client_host="192.168.0.153", client_port=8009):
+def setup_osc_client(client_host="192.168.0.130", client_port=8009):
     """Setup OSC client for sending messages back"""
     global osc_client
     print(f"Setting up OSC client to send to {client_host}:{client_port}")
